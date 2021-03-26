@@ -194,7 +194,7 @@ static void CreateConfirmLeaveTradeRoomPrompt(void);
 static void InitLinkRoomStartMenuScript(void);
 static void InitMenuBasedScript(const u8 *script);
 static void sub_80581DC(const u8 *script);
-static void sub_8058230(void);
+static void RunTerminateLinkScript(void);
 static void SpawnLinkPlayerObjectEvent(u8 i, s16 x, s16 y, u8 gender);
 static void InitLinkPlayerObjectEventPos(struct ObjectEvent *objEvent, s16 x, s16 y);
 static u8 GetSpriteForLinkedPlayer(u8 linkPlayerId);
@@ -292,8 +292,8 @@ void Overworld_ResetStateAfterFly(void)
     VarSet(VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 0);
     FlagClear(FLAG_SYS_USE_STRENGTH);
     FlagClear(FLAG_SYS_FLASH_ACTIVE);
-    FlagClear(FLAG_0x808);
-    VarSet(VAR_0x404D, 0);
+    FlagClear(FLAG_SYS_QL_DEPARTED);
+    VarSet(VAR_QL_ENTRANCE, 0);
 }
 
 void Overworld_ResetStateAfterTeleport(void)
@@ -306,8 +306,8 @@ void Overworld_ResetStateAfterTeleport(void)
     VarSet(VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 0);
     FlagClear(FLAG_SYS_USE_STRENGTH);
     FlagClear(FLAG_SYS_FLASH_ACTIVE);
-    FlagClear(FLAG_0x808);
-    VarSet(VAR_0x404D, 0);
+    FlagClear(FLAG_SYS_QL_DEPARTED);
+    VarSet(VAR_QL_ENTRANCE, 0);
 }
 
 void Overworld_ResetStateAfterDigEscRope(void)
@@ -320,8 +320,8 @@ void Overworld_ResetStateAfterDigEscRope(void)
     VarSet(VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 0);
     FlagClear(FLAG_SYS_USE_STRENGTH);
     FlagClear(FLAG_SYS_FLASH_ACTIVE);
-    FlagClear(FLAG_0x808);
-    VarSet(VAR_0x404D, 0);
+    FlagClear(FLAG_SYS_QL_DEPARTED);
+    VarSet(VAR_QL_ENTRANCE, 0);
 }
 
 static void Overworld_ResetStateAfterWhitingOut(void)
@@ -334,8 +334,8 @@ static void Overworld_ResetStateAfterWhitingOut(void)
     VarSet(VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 0);
     FlagClear(FLAG_SYS_USE_STRENGTH);
     FlagClear(FLAG_SYS_FLASH_ACTIVE);
-    FlagClear(FLAG_0x808);
-    VarSet(VAR_0x404D, 0);
+    FlagClear(FLAG_SYS_QL_DEPARTED);
+    VarSet(VAR_QL_ENTRANCE, 0);
 }
 
 static void Overworld_ResetStateOnContinue(void)
@@ -1393,7 +1393,7 @@ static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
     struct FieldInput fieldInput;
 
     sub_8112B3C();
-    sub_805BEB8();
+    UpdatePlayerAvatarTransitionState();
     FieldClearPlayerInput(&fieldInput);
     FieldGetPlayerInput(&fieldInput, newKeys, heldKeys);
     FieldInput_HandleCancelSignpost(&fieldInput);
@@ -1419,7 +1419,7 @@ static void DoCB1_Overworld_QuestLogPlayback(void)
     struct FieldInput fieldInput;
 
     sub_8112B3C();
-    sub_805BEB8();
+    UpdatePlayerAvatarTransitionState();
     sub_8111C68();
     FieldClearPlayerInput(&fieldInput);
     fieldInput = gQuestLogFieldInput;
@@ -1848,7 +1848,7 @@ static bool32 load_map_stuff(u8 *state, bool32 a1)
         (*state)++;
         break;
     case 1:
-        sub_8111F14();
+        QuestLog_InitPalettesBackup();
         (*state)++;
         break;
     case 2:
@@ -1865,8 +1865,8 @@ static bool32 load_map_stuff(u8 *state, bool32 a1)
         sub_8057114();
         if (gQuestLogState != QL_STATE_PLAYBACK)
         {
-            sub_80CC534();
-            sub_80CC59C();
+            QuestLog_CheckDepartingIndoorsMap();
+            QuestLog_TryRecordDepartedLocation();
         }
         SetHelpContextForMap();
         (*state)++;
@@ -1931,7 +1931,7 @@ static bool32 sub_8056CD8(u8 *state)
     {
     case 0:
         InitOverworldBgs();
-        sub_8111F14();
+        QuestLog_InitPalettesBackup();
         sub_8057024(FALSE);
         sub_8057100();
         sub_8057114();
@@ -1965,7 +1965,7 @@ static bool32 map_loading_iteration_2_link(u8 *state)
         (*state)++;
         break;
     case 1:
-        sub_8111F14();
+        QuestLog_InitPalettesBackup();
         sub_8057024(1);
         (*state)++;
         break;
@@ -2203,7 +2203,7 @@ static void CreateLinkPlayerSprites(void)
 void CB2_SetUpOverworldForQLPlaybackWithWarpExit(void)
 {
     FieldClearVBlankHBlankCallbacks();
-    gUnknown_2036E28 = 1;
+    gGlobalFieldTintMode = QL_TINT_GRAYSCALE;
     ScriptContext1_Init();
     ScriptContext2_Disable();
     SetMainCallback1(NULL);
@@ -2214,7 +2214,7 @@ void CB2_SetUpOverworldForQLPlaybackWithWarpExit(void)
 void CB2_SetUpOverworldForQLPlayback(void)
 {
     FieldClearVBlankHBlankCallbacks();
-    gUnknown_2036E28 = 1;
+    gGlobalFieldTintMode = QL_TINT_GRAYSCALE;
     LoadSaveblockMapHeader();
     ScriptContext1_Init();
     ScriptContext2_Disable();
@@ -2243,7 +2243,7 @@ static bool32 LoadMap_QLPlayback(u8 *state)
     case 0:
         InitOverworldBgs();
         FieldClearVBlankHBlankCallbacks();
-        sub_8111F14();
+        QuestLog_InitPalettesBackup();
         sub_81113E4();
         sub_8111438();
         if (GetQuestLogStartType() == QL_START_WARP)
@@ -2316,7 +2316,7 @@ void CB2_EnterFieldFromQuestLog(void)
 {
     FieldClearVBlankHBlankCallbacks();
     StopMapMusic();
-    gUnknown_2036E28 = 3;
+    gGlobalFieldTintMode = QL_TINT_BACKUP_GRAYSCALE;
     ResetSafariZoneFlag_();
     LoadSaveblockMapHeader();
     LoadSaveblockObjEventScripts();
@@ -2367,10 +2367,10 @@ static bool8 FieldCB2_Credits_WaitFade(void)
         return FALSE;
 }
 
-bool32 Overworld_DoScrollSceneForCredits(u8 *state_p, const struct CreditsOverworldCmd * script, u8 a2)
+bool32 Overworld_DoScrollSceneForCredits(u8 *state_p, const struct CreditsOverworldCmd * script, u8 tintMode)
 {
     sCreditsOverworld_Script = script;
-    gUnknown_2036E28 = a2;
+    gGlobalFieldTintMode = tintMode;
     return SetUpScrollSceneForCredits(state_p, 0);
 }
 
@@ -2673,7 +2673,7 @@ static void HandleLinkPlayerKeyInput(u32 playerId, u16 key, struct TradeRoomPlay
             if (trainer->isLocalPlayer)
             {
                 SetKeyInterceptCallback(KeyInterCB_DeferToEventScript);
-                sub_8058230();
+                RunTerminateLinkScript();
             }
             return;
         }
@@ -3170,7 +3170,7 @@ static void InitMenuBasedScript(const u8 *script)
     ScriptContext2_Enable();
 }
 
-static void sub_8058230(void)
+static void RunTerminateLinkScript(void)
 {
     ScriptContext1_SetupScript(TradeCenter_TerminateLink);
     ScriptContext2_Enable();
@@ -3260,7 +3260,14 @@ static void ZeroObjectEvent(struct ObjectEvent *objEvent)
     memset(objEvent, 0, sizeof(struct ObjectEvent));
 }
 
-static void SpawnLinkPlayerObjectEvent(u8 linkPlayerId, s16 x, s16 y, u8 a4)
+// Note: Emerald reuses the direction and range variables during Link mode
+// as special gender and direction values. The types and placement
+// conflict with the usual Event Object struct, thus the definitions.
+#define linkGender(obj) obj->singleMovementActive
+// not even one can reference *byte* aligned bitfield members...
+#define linkDirection(obj) ((u8*)obj)[offsetof(typeof(*obj), fieldEffectSpriteId) - 1] // -> rangeX
+
+static void SpawnLinkPlayerObjectEvent(u8 linkPlayerId, s16 x, s16 y, u8 gender)
 {
     u8 objEventId = GetFirstInactiveObjectEventId();
     struct LinkPlayerObjectEvent *linkPlayerObjEvent = &gLinkPlayerObjectEvents[linkPlayerId];
@@ -3275,8 +3282,8 @@ static void SpawnLinkPlayerObjectEvent(u8 linkPlayerId, s16 x, s16 y, u8 a4)
     linkPlayerObjEvent->movementMode = MOVEMENT_MODE_FREE;
 
     objEvent->active = TRUE;
-    objEvent->singleMovementActive = a4;
-    objEvent->range.as_byte = 2;
+    linkGender(objEvent) = gender;
+    linkDirection(objEvent) = DIR_NORTH;
     objEvent->spriteId = MAX_SPRITES;
 
     InitLinkPlayerObjectEventPos(objEvent, x, y);
@@ -3293,17 +3300,17 @@ static void InitLinkPlayerObjectEventPos(struct ObjectEvent *objEvent, s16 x, s1
     ObjectEventUpdateZCoord(objEvent);
 }
 
-static void SetLinkPlayerObjectRange(u8 linkPlayerId, u8 range)
+static void SetLinkPlayerObjectRange(u8 linkPlayerId, u8 dir)
 {
     if (gLinkPlayerObjectEvents[linkPlayerId].active)
     {
         u8 objEventId = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
         struct ObjectEvent *objEvent = &gObjectEvents[objEventId];
-        objEvent->range.as_byte = range;
+        linkDirection(objEvent) = dir;
     }
 }
 
-static void DestroyLinkPlayerOBject(u8 linkPlayerId)
+static void DestroyLinkPlayerObject(u8 linkPlayerId)
 {
     struct LinkPlayerObjectEvent *linkPlayerObjEvent = &gLinkPlayerObjectEvents[linkPlayerId];
     u8 objEventId = linkPlayerObjEvent->objEventId;
@@ -3334,7 +3341,7 @@ static u8 GetLinkPlayerFacingDirection(u8 linkPlayerId)
 {
     u8 objEventId = gLinkPlayerObjectEvents[linkPlayerId].objEventId;
     struct ObjectEvent *objEvent = &gObjectEvents[objEventId];
-    return objEvent->range.as_byte;
+    return linkDirection(objEvent);
 }
 
 static u8 GetLinkPlayerElevation(u8 linkPlayerId)
@@ -3393,35 +3400,35 @@ static void SetPlayerFacingDirection(u8 linkPlayerId, u8 facing)
     }
 }
 
-static u8 MovementEventModeCB_Normal(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 a3)
+static u8 MovementEventModeCB_Normal(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 dir)
 {
-    return sLinkPlayerFacingHandlers[a3](linkPlayerObjEvent, objEvent, a3);
+    return sLinkPlayerFacingHandlers[dir](linkPlayerObjEvent, objEvent, dir);
 }
 
-static u8 MovementEventModeCB_Ignored(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 a3)
+static u8 MovementEventModeCB_Ignored(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 dir)
 {
     return FACING_UP;
 }
 
 // Duplicate Function
-static u8 MovementEventModeCB_Normal_2(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 a3)
+static u8 MovementEventModeCB_Normal_2(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 dir)
 {
-    return sLinkPlayerFacingHandlers[a3](linkPlayerObjEvent, objEvent, a3);
+    return sLinkPlayerFacingHandlers[dir](linkPlayerObjEvent, objEvent, dir);
 }
 
-static bool8 FacingHandler_DoNothing(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 a3)
+static bool8 FacingHandler_DoNothing(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 dir)
 {
     return FALSE;
 }
 
-static bool8 FacingHandler_DpadMovement(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 a3)
+static bool8 FacingHandler_DpadMovement(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 dir)
 {
     s16 x, y;
 
-    objEvent->range.as_byte = FlipVerticalAndClearForced(a3, objEvent->range.as_byte);
-    ObjectEventMoveDestCoords(objEvent, objEvent->range.as_byte, &x, &y);
+    linkDirection(objEvent) = FlipVerticalAndClearForced(dir, linkDirection(objEvent));
+    ObjectEventMoveDestCoords(objEvent, linkDirection(objEvent), &x, &y);
 
-    if (LinkPlayerDetectCollision(linkPlayerObjEvent->objEventId, objEvent->range.as_byte, x, y))
+    if (LinkPlayerDetectCollision(linkPlayerObjEvent->objEventId, linkDirection(objEvent), x, y))
     {
         return FALSE;
     }
@@ -3434,9 +3441,9 @@ static bool8 FacingHandler_DpadMovement(struct LinkPlayerObjectEvent *linkPlayer
     }
 }
 
-static bool8 FacingHandler_ForcedFacingChange(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 a3)
+static bool8 FacingHandler_ForcedFacingChange(struct LinkPlayerObjectEvent *linkPlayerObjEvent, struct ObjectEvent *objEvent, u8 dir)
 {
-    objEvent->range.as_byte = FlipVerticalAndClearForced(a3, objEvent->range.as_byte);
+    linkDirection(objEvent) = FlipVerticalAndClearForced(dir, linkDirection(objEvent));
     return FALSE;
 }
 
@@ -3450,7 +3457,7 @@ static void MovementStatusHandler_TryAdvanceScript(struct LinkPlayerObjectEvent 
 {
     objEvent->directionSequenceIndex--;
     linkPlayerObjEvent->movementMode = MOVEMENT_MODE_FROZEN;
-    MoveCoords(objEvent->range.as_byte, &objEvent->initialCoords.x, &objEvent->initialCoords.y);
+    MoveCoords(linkDirection(objEvent), &objEvent->initialCoords.x, &objEvent->initialCoords.y);
     if (!objEvent->directionSequenceIndex)
     {
         ShiftStillObjectEventCoords(objEvent);
@@ -3510,12 +3517,12 @@ static void CreateLinkPlayerSprite(u8 linkPlayerId, u8 gameVersion)
         if (gameVersion == VERSION_FIRE_RED || gameVersion == VERSION_LEAF_GREEN)
         {
             objEvent->spriteId = AddPseudoObjectEvent(
-                GetRivalAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, objEvent->singleMovementActive),
+                GetRivalAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, linkGender(objEvent)),
                 SpriteCB_LinkPlayer, 0, 0, 0);
         }
         else
         {
-            objEvent->spriteId = AddPseudoObjectEvent(GetRSAvatarGraphicsIdByGender(objEvent->singleMovementActive), SpriteCB_LinkPlayer, 0, 0, 0);
+            objEvent->spriteId = AddPseudoObjectEvent(GetRSAvatarGraphicsIdByGender(linkGender(objEvent)), SpriteCB_LinkPlayer, 0, 0, 0);
         }
 
         sprite = &gSprites[objEvent->spriteId];
@@ -3535,9 +3542,9 @@ static void SpriteCB_LinkPlayer(struct Sprite *sprite)
     sprite->oam.priority = ZCoordToPriority(objEvent->previousElevation);
 
     if (!linkPlayerObjEvent->movementMode != MOVEMENT_MODE_FREE)
-        StartSpriteAnim(sprite, GetFaceDirectionAnimNum(objEvent->range.as_byte));
+        StartSpriteAnim(sprite, GetFaceDirectionAnimNum(linkDirection(objEvent)));
     else
-        StartSpriteAnimIfDifferent(sprite, GetMoveDirectionAnimNum(objEvent->range.as_byte));
+        StartSpriteAnimIfDifferent(sprite, GetMoveDirectionAnimNum(linkDirection(objEvent)));
 
     UpdateObjectEventSpriteVisibility(sprite, 0);
     if (objEvent->triggerGroundEffectsOnMove)
