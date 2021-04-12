@@ -824,7 +824,9 @@ struct SaveBlock1
     /*0x3D24*/ u8 filler3D24[0x10];
     /*0x3D34*/ u32 towerChallengeId;
     /*0x3D38*/ struct TrainerTower trainerTower[NUM_TOWER_CHALLENGE_TYPES];
-}; // size: 0x3D68
+    /*0x????*/ u16 seasonPedometer;
+    /*0x????*/ u8 season;
+}; // size: 0x????
 
 struct MapPosition
 {

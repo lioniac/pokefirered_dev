@@ -149,6 +149,11 @@ void NewGameInitData(void)
     ScriptContext2_RunNewScript(EventScript_ResetAllMapFlags);
     StringCopy(gSaveBlock1Ptr->rivalName, rivalName);
     ResetTrainerTowerResults();
+
+    //Seasons Random Weather
+    gSaveBlock1Ptr->seasonPedometer = 0;
+    gSaveBlock1Ptr->season = 3;
+    FlagSet(FLAG_SEASON_CHANGE);
 }
 
 static void ResetMiniGamesResults(void)
