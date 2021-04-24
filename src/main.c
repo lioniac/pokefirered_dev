@@ -140,6 +140,7 @@ void AgbMain()
     CheckForFlashMemory();
     InitMainCallbacks();
     InitMapMusic();
+    SeedRngAndSetTrainerId();
     SeedRngWithRtc();
     ClearDma3Requests();
     ResetBgs();
@@ -449,9 +450,7 @@ static void IntrDummy(void)
 static void WaitForVBlank(void)
 {
     gMain.intrCheck &= ~INTR_FLAG_VBLANK;
-
-    while (!(gMain.intrCheck & INTR_FLAG_VBLANK))
-        ;
+    asm("swi 0x5"); // VBlankIntrWait();
 }
 
 void SetVBlankCounter1Ptr(u32 *ptr)
