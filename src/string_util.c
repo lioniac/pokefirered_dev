@@ -37,6 +37,21 @@ extern u8 gExpandedPlaceholder_Groudon[];
 extern u8 gExpandedPlaceholder_Red[];
 extern u8 gExpandedPlaceholder_Green[];
 
+u8 NumDigits(u32 num)
+{
+    u8 i;
+
+    num += 1;
+
+    for (i = 0; i < NELEMS(sPowersOfTen); i++)
+    {
+        if (num >= sPowersOfTen[i])
+            continue;
+
+        return i;
+    }
+}
+
 u8 *StringCopy10(u8 *dest, const u8 *src)
 {
     u8 i;

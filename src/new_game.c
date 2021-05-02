@@ -60,13 +60,13 @@ static void InitPlayerTrainerId(void)
 
 static void SetDefaultOptions(void)
 {
-    gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_MID;
-    gSaveBlock2Ptr->optionsWindowFrameType = 0;
-    gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_MONO;
-    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SHIFT;
-    gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
+    gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_FAST;
+    gSaveBlock2Ptr->optionsWindowFrameType = 3;
+    gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_STEREO;
+    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SET;
+    gSaveBlock2Ptr->optionsBattleSceneOff = TRUE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
-    gSaveBlock2Ptr->optionsButtonMode = OPTIONS_BUTTON_MODE_HELP;
+    gSaveBlock2Ptr->optionsButtonMode = OPTIONS_BUTTON_MODE_LR;
 }
 
 static void ClearPokedexFlags(void)
@@ -154,8 +154,10 @@ void NewGameInitData(void)
 
     //Seasons Random Weather
     gSaveBlock1Ptr->seasonPedometer = 0;
-    gSaveBlock1Ptr->season = 3;
-    FlagSet(FLAG_SEASON_CHANGE);
+    gSaveBlock1Ptr->season = 0;
+    VarSet(VAR_SEASON, 0);
+    VarSet(STEPS_FOR_SEASON_CHANGE, 5000);
+    VarSet(VAR_STEPS_FOR_NEXT_SEASON, VarGet(STEPS_FOR_SEASON_CHANGE));
 }
 
 static void ResetMiniGamesResults(void)

@@ -839,4 +839,6 @@ struct MapPosition
 extern struct SaveBlock1* gSaveBlock1Ptr;
 extern u8 gReservedSpritePaletteCount;
 
+#define STEPS_FOR_SEASON_CHANGE 5000
+
 #endif // GUARD_GLOBAL_H
