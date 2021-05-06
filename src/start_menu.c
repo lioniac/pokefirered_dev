@@ -1018,14 +1018,14 @@ void AppendToList(u8 *list, u8 *cursor, u8 newEntry)
 
 static void GetStartMenuClock(void)
 {
-    u8 StartMenu_Spring[] = _("\nSeason: Spring, ");
-    u8 StartMenu_NextSummer[] = _(" steps for Summer.");
-    u8 StartMenu_Summer[] = _("\nSeason: Summer, ");
-    u8 StartMenu_NextAutumn[] = _(" steps for Autumn.");
-    u8 StartMenu_Autumn[] = _("\nSeason: Autumn, ");
-    u8 StartMenu_NextWinter[] = _(" steps for Winter.");
-    u8 StartMenu_Winter[] = _("\nSeason: Winter, ");
-    u8 StartMenu_NextSpring[] = _(" steps for Spring.");
+    u8 StartMenu_Spring[] = _("Spring - ");
+    u8 StartMenu_NextSummer[] = _(" outdoor steps for Summer.");
+    u8 StartMenu_Summer[] = _("Summer - ");
+    u8 StartMenu_NextAutumn[] = _(" outdoor steps for Autumn.");
+    u8 StartMenu_Autumn[] = _("Autumn - ");
+    u8 StartMenu_NextWinter[] = _(" outdoor steps for Winter.");
+    u8 StartMenu_Winter[] = _("Winter - ");
+    u8 StartMenu_NextSpring[] = _(" outdoor steps for Spring.");
     u8 StartMenu_Sunday[]    = _("Sunday, ");
     u8 StartMenu_Monday[]    = _("Monday, ");
     u8 StartMenu_Tuesday[]   = _("Tuesday, ");
@@ -1035,6 +1035,7 @@ static void GetStartMenuClock(void)
     u8 StartMenu_Saturday[]  = _("Saturday, ");
     u8 StartMenu_Separator[] = _(":");
     u8 StartMenu_Zero[] = _("0");
+    u8 StartMenu_NewLine[] = _("\n");
 
     RtcCalcLocalTime();
     switch(gLocalTime.dayOfWeek)
@@ -1069,30 +1070,31 @@ static void GetStartMenuClock(void)
     if (NumDigits(gLocalTime.minutes) == 1)
         StringAppendN(gStringVar1, StartMenu_Zero, 2);
     StringAppendN(gStringVar1, gStringVar3, 3);
+    StringAppendN(gStringVar1, StartMenu_NewLine, 2);
 
     ConvertIntToDecimalStringN(gStringVar3, VarGet(VAR_STEPS_FOR_NEXT_SEASON), STR_CONV_MODE_LEFT_ALIGN, 5);
     switch (VarGet(VAR_SEASON))
     {
     case 0:
         StringCopyN(gStringVar2, StartMenu_Spring, 18);
-        StringCopyN(gStringVar4, StartMenu_NextSummer, 19);
+        StringCopyN(gStringVar4, StartMenu_NextSummer, 27);
         break;
     case 1:
         StringCopyN(gStringVar2, StartMenu_Summer, 18);
-        StringCopyN(gStringVar4, StartMenu_NextAutumn, 19);
+        StringCopyN(gStringVar4, StartMenu_NextAutumn, 27);
         break;
     case 2:
         StringCopyN(gStringVar2, StartMenu_Autumn, 18);
-        StringCopyN(gStringVar4, StartMenu_NextWinter, 19);
+        StringCopyN(gStringVar4, StartMenu_NextWinter, 27);
         break;
     case 3:
         StringCopyN(gStringVar2, StartMenu_Winter, 18);
-        StringCopyN(gStringVar4, StartMenu_NextSpring, 19);
+        StringCopyN(gStringVar4, StartMenu_NextSpring, 27);
         break;
     }
 
-    StringCopyN( gStartMenu_Clock, gStringVar1, 17);
-    StringAppendN(gStartMenu_Clock, gStringVar2, 18);
+    StringCopyN(  gStartMenu_Clock, gStringVar2, 10);
+    StringAppendN(gStartMenu_Clock, gStringVar1, 18);
     StringAppendN(gStartMenu_Clock, gStringVar3, 5);
-    StringAppendN(gStartMenu_Clock, gStringVar4, 19);
+    StringAppendN(gStartMenu_Clock, gStringVar4, 27);
 }
