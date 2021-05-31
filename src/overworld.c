@@ -153,7 +153,7 @@ static void InitOverworldGraphicsRegisters(void);
 static void sub_8057024(bool32 a0);
 static void sub_8057074(void);
 static void mli4_mapscripts_and_other(void);
-static void sub_8057100(void);
+static void ReloadObjectsAndRunReturnToFieldMapScript(void);
 static void sub_8057114(void);
 static void SetCameraToTrackGuestPlayer(void);
 static void SetCameraToTrackGuestPlayer_2(void);
@@ -1372,7 +1372,7 @@ static void InitOverworldBgs(void)
     SetBgTilemapBuffer(2, gBGTilemapBuffers1);
     SetBgTilemapBuffer(3, gBGTilemapBuffers3);
     InitStandardTextBoxWindows();
-    ResetBg0();
+    InitTextBoxGfxAndPrinters();
     sub_8069348();
 }
 
@@ -1390,7 +1390,7 @@ static void InitOverworldBgs_NoResetHeap(void)
     SetBgTilemapBuffer(2, gBGTilemapBuffers1);
     SetBgTilemapBuffer(3, gBGTilemapBuffers3);
     InitStandardTextBoxWindows();
-    ResetBg0();
+    InitTextBoxGfxAndPrinters();
     sub_8069348();
 }
 
@@ -1965,7 +1965,7 @@ static bool32 sub_8056CD8(u8 *state)
         InitOverworldBgs();
         QuestLog_InitPalettesBackup();
         sub_8057024(FALSE);
-        sub_8057100();
+        ReloadObjectsAndRunReturnToFieldMapScript();
         sub_8057114();
         FollowMe_BindToSurbBlobOnReloadScreen();
         (*state)++;
@@ -2004,7 +2004,7 @@ static bool32 map_loading_iteration_2_link(u8 *state)
         break;
     case 2:
         CreateLinkPlayerSprites();
-        sub_8057100();
+        ReloadObjectsAndRunReturnToFieldMapScript();
         SetCameraToTrackGuestPlayer_2();
         SetHelpContextForMap();
         (*state)++;
@@ -2175,9 +2175,9 @@ static void mli4_mapscripts_and_other(void)
     FollowMe_HandleSprite();
 }
 
-static void sub_8057100(void)
+static void ReloadObjectsAndRunReturnToFieldMapScript(void)
 {
-    sub_805EDF0(0, 0);
+    ReloadMapObjectsWithOffset(0, 0);
     RunOnReturnToFieldMapScript();
 }
 
@@ -2301,7 +2301,7 @@ static bool32 LoadMap_QLPlayback(u8 *state)
         (*state)++;
         break;
     case 3:
-        sub_8057100();
+        ReloadObjectsAndRunReturnToFieldMapScript();
         sub_8057114();
         (*state)++;
         break;
