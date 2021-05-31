@@ -23,6 +23,7 @@
 #include "overworld.h"
 #include "party_menu.h"
 #include "field_specials.h"
+#include "rtc.h"
 #include "constants/items.h"
 #include "constants/item_effects.h"
 #include "constants/hoenn_cries.h"
@@ -68,7 +69,7 @@ EWRAM_DATA struct Pokemon gPlayerParty[PARTY_SIZE] = {};
 EWRAM_DATA struct SpriteTemplate gMultiuseSpriteTemplate = {0};
 static EWRAM_DATA struct OakSpeechNidoranFStruct *sOakSpeechNidoranResources = NULL;
 
-static union PokemonSubstruct *GetSubstruct(struct BoxPokemon *boxMon, u32 personality, u8 substructType);
+static union PokemonSubstruct *GetSubstruct(struct BoxPokemon *boxMon, u8 substructType);
 static u16 GetDeoxysStat(struct Pokemon *mon, s32 statId);
 static bool8 IsShinyOtIdPersonality(u32 otId, u32 personality);
 static u16 ModifyStatByNature(u8 nature, u16 n, u8 statIndex);
@@ -82,7 +83,6 @@ static void DeleteFirstMoveAndGiveMoveToBoxMon(struct BoxPokemon *boxMon, u16 mo
 static void GiveBoxMonInitialMoveset(struct BoxPokemon *boxMon);
 static u16 GiveMoveToBoxMon(struct BoxPokemon *boxMon, u16 move);
 static u8 GetLevelFromMonExp(struct Pokemon *mon);
-static u16 CalculateBoxMonChecksum(struct BoxPokemon *boxMon);
 
 #include "data/battle_moves.h"
 
@@ -1727,6 +1727,7 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
     u32 personality;
     u32 value;
     u16 checksum;
+    u32 shinyValue;
 
     ZeroBoxMonData(boxMon);
 
@@ -1735,12 +1736,9 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
     else
         personality = Random32();
 
-    SetBoxMonData(boxMon, MON_DATA_PERSONALITY, &personality);
-
     //Determine original trainer ID
     if (otIdType == OT_ID_RANDOM_NO_SHINY) //Pokemon cannot be shiny
     {
-        u32 shinyValue;
         do
         {
             value = Random32();
@@ -1759,11 +1757,19 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
               | (gSaveBlock2Ptr->playerTrainerId[3] << 24);
     }
 
+    if (VarGet(VAR_GENERATE_SHINY) > 0) // Value of VAR_GENERATE_SHINY will decide how many shiny Pokémon will be generated as the Player's next encounters.
+    {
+        do
+        {
+            personality = Random32();
+            shinyValue = HIHALF(value) ^ LOHALF(value) ^ HIHALF(personality) ^ LOHALF(personality);
+        } while (shinyValue >= 8);
+        VarSet(VAR_GENERATE_SHINY, (VarGet(VAR_GENERATE_SHINY) - 1));
+    }
+
+    SetBoxMonData(boxMon, MON_DATA_PERSONALITY, &personality);
     SetBoxMonData(boxMon, MON_DATA_OT_ID, &value);
 
-    checksum = CalculateBoxMonChecksum(boxMon);
-    SetBoxMonData(boxMon, MON_DATA_CHECKSUM, &checksum);
-    EncryptBoxMon(boxMon);
     GetSpeciesName(speciesName, species);
     SetBoxMonData(boxMon, MON_DATA_NICKNAME, speciesName);
     SetBoxMonData(boxMon, MON_DATA_LANGUAGE, &gGameLanguage);
@@ -2022,30 +2028,6 @@ void ConvertPokemonToBattleTowerPokemon(struct Pokemon *mon, struct BattleTowerP
     dest->abilityNum = GetMonData(mon, MON_DATA_ABILITY_NUM, NULL);
     dest->personality = GetMonData(mon, MON_DATA_PERSONALITY, NULL);
     GetMonData(mon, MON_DATA_NICKNAME, dest->nickname);
-}
-
-static u16 CalculateBoxMonChecksum(struct BoxPokemon *boxMon)
-{
-    u16 checksum = 0;
-    union PokemonSubstruct *substruct0 = GetSubstruct(boxMon, boxMon->personality, 0);
-    union PokemonSubstruct *substruct1 = GetSubstruct(boxMon, boxMon->personality, 1);
-    union PokemonSubstruct *substruct2 = GetSubstruct(boxMon, boxMon->personality, 2);
-    union PokemonSubstruct *substruct3 = GetSubstruct(boxMon, boxMon->personality, 3);
-    s32 i;
-
-    for (i = 0; i < 6; i++)
-        checksum += substruct0->raw[i];
-
-    for (i = 0; i < 6; i++)
-        checksum += substruct1->raw[i];
-
-    for (i = 0; i < 6; i++)
-        checksum += substruct2->raw[i];
-
-    for (i = 0; i < 6; i++)
-        checksum += substruct3->raw[i];
-
-    return checksum;
 }
 
 #define CALC_STAT(base, iv, ev, statIndex, field)               \
@@ -2382,41 +2364,13 @@ s32 CalculateBaseDamage(struct BattlePokemon *attacker, struct BattlePokemon *de
     if (attacker->ability == ABILITY_HUGE_POWER || attacker->ability == ABILITY_PURE_POWER)
         attack *= 2;
 
-    // In FRLG, the Battle Tower and opponent checks are stubbed here.
-    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | /*BATTLE_TYPE_BATTLE_TOWER |*/ BATTLE_TYPE_EREADER_TRAINER)))
-    {
-        if (FlagGet(FLAG_BADGE01_GET)
-            && GetBattlerSide(battlerIdAtk) == B_SIDE_PLAYER)
-            attack = (110 * attack) / 100;
-    }
-    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | /*BATTLE_TYPE_BATTLE_TOWER |*/ BATTLE_TYPE_EREADER_TRAINER)))
-    {
-        if (FlagGet(FLAG_BADGE05_GET)
-            && GetBattlerSide(battlerIdDef) == B_SIDE_PLAYER)
-            defense = (110 * defense) / 100;
-    }
-    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | /*BATTLE_TYPE_BATTLE_TOWER |*/ BATTLE_TYPE_EREADER_TRAINER)))
-    {
-        if (FlagGet(FLAG_BADGE07_GET)
-            && GetBattlerSide(battlerIdAtk) == B_SIDE_PLAYER)
-            spAttack = (110 * spAttack) / 100;
-    }
-    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | /*BATTLE_TYPE_BATTLE_TOWER |*/ BATTLE_TYPE_EREADER_TRAINER)))
-    {
-        if (FlagGet(FLAG_BADGE07_GET)
-            && GetBattlerSide(battlerIdDef) == B_SIDE_PLAYER)
-            spDefense = (110 * spDefense) / 100;
-    }
-
     for (i = 0; i < NELEMS(sHoldEffectToType); i++)
     {
         if (attackerHoldEffect == sHoldEffectToType[i][0]
             && type == sHoldEffectToType[i][1])
         {
-            if (IS_TYPE_PHYSICAL(type))
-                attack = (attack * (attackerHoldEffectParam + 100)) / 100;
-            else
-                spAttack = (spAttack * (attackerHoldEffectParam + 100)) / 100;
+            attack = (attack * (attackerHoldEffectParam + 100)) / 100;
+            spAttack = (spAttack * (attackerHoldEffectParam + 100)) / 100;
             break;
         }
     }
@@ -2464,7 +2418,7 @@ s32 CalculateBaseDamage(struct BattlePokemon *attacker, struct BattlePokemon *de
     if (gBattleMoves[gCurrentMove].effect == EFFECT_EXPLOSION)
         defense /= 2;
 
-    if (IS_TYPE_PHYSICAL(type))
+    if (IS_TYPE_PHYSICAL(gBattleMoves[move]))
     {
         if (gCritMultiplier == 2)
         {
@@ -2514,7 +2468,7 @@ s32 CalculateBaseDamage(struct BattlePokemon *attacker, struct BattlePokemon *de
     if (type == TYPE_MYSTERY)
         damage = 0; // is ??? type. does 0 damage.
 
-    if (IS_TYPE_SPECIAL(type))
+    if (IS_TYPE_SPECIAL(gBattleMoves[move]))
     {
         if (gCritMultiplier == 2)
         {
@@ -2552,46 +2506,46 @@ s32 CalculateBaseDamage(struct BattlePokemon *attacker, struct BattlePokemon *de
 
         if ((gBattleTypeFlags & BATTLE_TYPE_DOUBLE) && gBattleMoves[move].target == 8 && CountAliveMonsInBattle(BATTLE_ALIVE_DEF_SIDE) == 2)
             damage /= 2;
+    }
 
-        // are effects of weather negated with cloud nine or air lock
-        if (WEATHER_HAS_EFFECT2)
+    // are effects of weather negated with cloud nine or air lock
+    if (WEATHER_HAS_EFFECT2)
+    {
+        if (gBattleWeather & WEATHER_RAIN_TEMPORARY)
         {
-            if (gBattleWeather & WEATHER_RAIN_TEMPORARY)
+            switch (type)
             {
-                switch (type)
-                {
-                case TYPE_FIRE:
-                    damage /= 2;
-                    break;
-                case TYPE_WATER:
-                    damage = (15 * damage) / 10;
-                    break;
-                }
-            }
-
-            // any weather except sun weakens solar beam
-            if ((gBattleWeather & (WEATHER_RAIN_ANY | WEATHER_SANDSTORM_ANY | WEATHER_HAIL)) && gCurrentMove == MOVE_SOLAR_BEAM)
+            case TYPE_FIRE:
                 damage /= 2;
-
-            // sunny
-            if (gBattleWeather & WEATHER_SUN_ANY)
-            {
-                switch (type)
-                {
-                case TYPE_FIRE:
-                    damage = (15 * damage) / 10;
-                    break;
-                case TYPE_WATER:
-                    damage /= 2;
-                    break;
-                }
+                break;
+            case TYPE_WATER:
+                damage = (15 * damage) / 10;
+                break;
             }
         }
 
-        // flash fire triggered
-        if ((gBattleResources->flags->flags[battlerIdAtk] & RESOURCE_FLAG_FLASH_FIRE) && type == TYPE_FIRE)
-            damage = (15 * damage) / 10;
+        // any weather except sun weakens solar beam
+        if ((gBattleWeather & (WEATHER_RAIN_ANY | WEATHER_SANDSTORM_ANY | WEATHER_HAIL)) && gCurrentMove == MOVE_SOLAR_BEAM)
+            damage /= 2;
+
+        // sunny
+        if (gBattleWeather & WEATHER_SUN_ANY)
+        {
+            switch (type)
+            {
+            case TYPE_FIRE:
+                damage = (15 * damage) / 10;
+                break;
+            case TYPE_WATER:
+                damage /= 2;
+                break;
+            }
+        }
     }
+
+    // flash fire triggered
+    if ((gBattleResources->flags->flags[battlerIdAtk] & RESOURCE_FLAG_FLASH_FIRE) && type == TYPE_FIRE)
+        damage = (15 * damage) / 10;
 
     return damage + 2;
 }
@@ -2762,85 +2716,10 @@ static void DecryptBoxMon(struct BoxPokemon *boxMon)
     }
 }
 
-#define SUBSTRUCT_CASE(n, v1, v2, v3, v4)                               \
-case n:                                                                 \
-    {                                                                   \
-    union PokemonSubstruct *substructs0 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs1 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs2 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs3 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs4 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs5 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs6 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs7 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs8 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs9 = boxMon->secure.substructs;    \
-    union PokemonSubstruct *substructs10 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs11 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs12 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs13 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs14 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs15 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs16 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs17 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs18 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs19 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs20 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs21 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs22 = boxMon->secure.substructs;   \
-    union PokemonSubstruct *substructs23 = boxMon->secure.substructs;   \
-                                                                        \
-        switch (substructType)                                          \
-        {                                                               \
-        case 0:                                                         \
-            substruct = &substructs ## n [v1];                          \
-            break;                                                      \
-        case 1:                                                         \
-            substruct = &substructs ## n [v2];                          \
-            break;                                                      \
-        case 2:                                                         \
-            substruct = &substructs ## n [v3];                          \
-            break;                                                      \
-        case 3:                                                         \
-            substruct = &substructs ## n [v4];                          \
-            break;                                                      \
-        }                                                               \
-        break;                                                          \
-    }                                                                   \
-
-static union PokemonSubstruct *GetSubstruct(struct BoxPokemon *boxMon, u32 personality, u8 substructType)
+static union PokemonSubstruct *GetSubstruct(struct BoxPokemon *boxMon, u8 substructType)
 {
-    union PokemonSubstruct *substruct = NULL;
-
-    switch (personality % 24)
-    {
-        SUBSTRUCT_CASE( 0,0,1,2,3)
-        SUBSTRUCT_CASE( 1,0,1,3,2)
-        SUBSTRUCT_CASE( 2,0,2,1,3)
-        SUBSTRUCT_CASE( 3,0,3,1,2)
-        SUBSTRUCT_CASE( 4,0,2,3,1)
-        SUBSTRUCT_CASE( 5,0,3,2,1)
-        SUBSTRUCT_CASE( 6,1,0,2,3)
-        SUBSTRUCT_CASE( 7,1,0,3,2)
-        SUBSTRUCT_CASE( 8,2,0,1,3)
-        SUBSTRUCT_CASE( 9,3,0,1,2)
-        SUBSTRUCT_CASE(10,2,0,3,1)
-        SUBSTRUCT_CASE(11,3,0,2,1)
-        SUBSTRUCT_CASE(12,1,2,0,3)
-        SUBSTRUCT_CASE(13,1,3,0,2)
-        SUBSTRUCT_CASE(14,2,1,0,3)
-        SUBSTRUCT_CASE(15,3,1,0,2)
-        SUBSTRUCT_CASE(16,2,3,0,1)
-        SUBSTRUCT_CASE(17,3,2,0,1)
-        SUBSTRUCT_CASE(18,1,2,3,0)
-        SUBSTRUCT_CASE(19,1,3,2,0)
-        SUBSTRUCT_CASE(20,2,1,3,0)
-        SUBSTRUCT_CASE(21,3,1,2,0)
-        SUBSTRUCT_CASE(22,2,3,1,0)
-        SUBSTRUCT_CASE(23,3,2,1,0)
-    }
-
-    return substruct;
+    union PokemonSubstruct *substructs = boxMon->secure.substructs;
+    return &substructs[substructType];
 }
 
 u32 GetMonData(struct Pokemon *mon, s32 field, u8* data)
@@ -2922,19 +2801,10 @@ u32 GetBoxMonData(struct BoxPokemon *boxMon, s32 field, u8 *data)
 
     if (field > MON_DATA_ENCRYPT_SEPARATOR)
     {
-        substruct0 = &(GetSubstruct(boxMon, boxMon->personality, 0)->type0);
-        substruct1 = &(GetSubstruct(boxMon, boxMon->personality, 1)->type1);
-        substruct2 = &(GetSubstruct(boxMon, boxMon->personality, 2)->type2);
-        substruct3 = &(GetSubstruct(boxMon, boxMon->personality, 3)->type3);
-
-        DecryptBoxMon(boxMon);
-
-        if (CalculateBoxMonChecksum(boxMon) != boxMon->checksum)
-        {
-            boxMon->isBadEgg = 1;
-            boxMon->isEgg = 1;
-            substruct3->isEgg = 1;
-        }
+        substruct0 = &(GetSubstruct(boxMon, 0)->type0);
+        substruct1 = &(GetSubstruct(boxMon, 1)->type1);
+        substruct2 = &(GetSubstruct(boxMon, 2)->type2);
+        substruct3 = &(GetSubstruct(boxMon, 3)->type3);
     }
 
     switch (field)
@@ -3257,9 +3127,6 @@ u32 GetBoxMonData(struct BoxPokemon *boxMon, s32 field, u8 *data)
         break;
     }
 
-    if (field > MON_DATA_ENCRYPT_SEPARATOR)
-        EncryptBoxMon(boxMon);
-
     return retVal;
 }
 
@@ -3346,21 +3213,10 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
 
     if (field > MON_DATA_ENCRYPT_SEPARATOR)
     {
-        substruct0 = &(GetSubstruct(boxMon, boxMon->personality, 0)->type0);
-        substruct1 = &(GetSubstruct(boxMon, boxMon->personality, 1)->type1);
-        substruct2 = &(GetSubstruct(boxMon, boxMon->personality, 2)->type2);
-        substruct3 = &(GetSubstruct(boxMon, boxMon->personality, 3)->type3);
-
-        DecryptBoxMon(boxMon);
-
-        if (CalculateBoxMonChecksum(boxMon) != boxMon->checksum)
-        {
-            boxMon->isBadEgg = 1;
-            boxMon->isEgg = 1;
-            substruct3->isEgg = 1;
-            EncryptBoxMon(boxMon);
-            return;
-        }
+        substruct0 = &(GetSubstruct(boxMon, 0)->type0);
+        substruct1 = &(GetSubstruct(boxMon, 1)->type1);
+        substruct2 = &(GetSubstruct(boxMon, 2)->type2);
+        substruct3 = &(GetSubstruct(boxMon, 3)->type3);
     }
 
     switch (field)
@@ -3586,11 +3442,7 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         break;
     case MON_DATA_IVS:
     {
-#ifdef BUGFIX_SETMONIVS
         u32 ivs = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-#else
-        u32 ivs = *data; // Bug: Only the HP IV and the lower 3 bits of the Attack IV are read. The rest become 0.
-#endif
         substruct3->hpIV = ivs & 0x1F;
         substruct3->attackIV = (ivs >> 5) & 0x1F;
         substruct3->defenseIV = (ivs >> 10) & 0x1F;
@@ -3601,12 +3453,6 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
     }
     default:
         break;
-    }
-
-    if (field > MON_DATA_ENCRYPT_SEPARATOR)
-    {
-        boxMon->checksum = CalculateBoxMonChecksum(boxMon);
-        EncryptBoxMon(boxMon);
     }
 }
 
@@ -4917,20 +4763,15 @@ u16 GetEvolutionTargetSpecies(struct Pokemon *mon, u8 type, u16 evolutionItem)
                 if (friendship >= 220)
                     targetSpecies = gEvolutionTable[species][i].targetSpecies;
                 break;
-            // FR/LG removed the time of day evolutions due to having no RTC.
             case EVO_FRIENDSHIP_DAY:
-                /*
                 RtcCalcLocalTime();
                 if (gLocalTime.hours >= 12 && gLocalTime.hours < 24 && friendship >= 220)
                     targetSpecies = gEvolutionTable[species][i].targetSpecies;
-                */
                 break;
             case EVO_FRIENDSHIP_NIGHT:
-                /*
                 RtcCalcLocalTime();
                 if (gLocalTime.hours >= 0 && gLocalTime.hours < 12 && friendship >= 220)
                     targetSpecies = gEvolutionTable[species][i].targetSpecies;
-                */
                 break;
             case EVO_LEVEL:
                 if (gEvolutionTable[species][i].param <= level)
@@ -4982,12 +4823,9 @@ u16 GetEvolutionTargetSpecies(struct Pokemon *mon, u8 type, u16 evolutionItem)
                 if (gEvolutionTable[species][i].param == heldItem)
                 {
                     targetSpecies = gEvolutionTable[species][i].targetSpecies;
-                    if (IsNationalPokedexEnabled() || targetSpecies <= 151)
-                    {
-                        heldItem = 0;
-                        SetMonData(mon, MON_DATA_HELD_ITEM, &heldItem);
-                        targetSpecies = gEvolutionTable[species][i].targetSpecies;
-                    }
+                    heldItem = 0;
+                    SetMonData(mon, MON_DATA_HELD_ITEM, &heldItem);
+                    targetSpecies = gEvolutionTable[species][i].targetSpecies;
                 }
                 break;
             }
@@ -5525,20 +5363,21 @@ bool8 TryIncrementMonLevel(struct Pokemon *mon)
 u32 CanMonLearnTMHM(struct Pokemon *mon, u8 tm)
 {
     u16 species = GetMonData(mon, MON_DATA_SPECIES2, NULL);
+    const u8 *learnableMoves;
+
     if (species == SPECIES_EGG)
-    {
         return 0;
-    }
-    else if (tm < 32)
+
+    learnableMoves = gTMHMLearnsets[species];
+    while(*learnableMoves != 0xFF)
     {
-        u32 mask = 1 << tm;
-        return sTMHMLearnsets[species][0] & mask;
+        if(*learnableMoves == tm)
+            return TRUE;
+
+        learnableMoves++;
     }
-    else
-    {
-        u32 mask = 1 << (tm - 32);
-        return sTMHMLearnsets[species][1] & mask;
-    }
+
+    return FALSE;
 }
 
 u8 GetMoveRelearnerMoves(struct Pokemon *mon, u16 *moves)

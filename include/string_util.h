@@ -10,6 +10,7 @@ enum StringConvertMode
     STR_CONV_MODE_LEADING_ZEROS
 };
 
+u8 NumDigits(u32 num);
 u8 *StringCopy10(u8 *dest, const u8 *src);
 u8 *StringGetEnd10(u8 *str);
 u8 *StringCopy7(u8 *dest, const u8 *src);
@@ -39,5 +40,6 @@ u8 GetExtCtrlCodeLength(u8 code);
 s32 StringCompareWithoutExtCtrlCodes(const u8 *str1, const u8 *str2);
 void ConvertInternationalString(u8 *s, u8 language);
 void StripExtCtrlCodes(u8 *str);
+char *ConvertToAscii(const u8 *str);
 
 #endif // GUARD_STRING_UTIL_H

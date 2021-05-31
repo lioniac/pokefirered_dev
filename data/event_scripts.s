@@ -36,6 +36,8 @@
 #include "constants/easy_chat.h"
 #include "constants/trainer_card.h"
 #include "constants/help_system.h"
+#include "constants/follow_me.h"
+#include "constants/quests.h"
 	.include "asm/macros.inc"
 	.include "asm/macros/event.inc"
 	.set FALSE, 0
@@ -854,7 +856,7 @@ Text_WantWhichFloor:: @ 81A535C
 
 Text_BagItemCanBeRegistered:: @ 81A5375
 	.string "An item in the BAG can be\n"
-	.string "registered to SELECT for easy use.$"
+	.string "registered for easy use.$"
 
 @ Unused (email from R/S Rivals computer)
 Text_TrainerSchoolEmail:: @ 81A53B2
@@ -880,7 +882,8 @@ Text_GiveNicknameToReceivedMon:: @ 81A5446
 	.string "{STR_VAR_2} you received?$"
 
 gText_PkmnFainted3:: @ 81A5476
-	.string "{STR_VAR_1} fainted…\p"
+	.string "{STR_VAR_1} survived the poisoning!\n"
+	.string "The poison faded away.\p"
 	.string "$"
 
 Text_WelcomeWantToHealPkmn:: @ 81A5483
@@ -1126,7 +1129,7 @@ EventScript_HandOverItem:: @ 81A74F2
 	.include "data/scripts/questionnaire.inc"
 
 EventScript_BagItemCanBeRegistered:: @ 81A77A0
-	msgbox Text_BagItemCanBeRegistered, MSGBOX_SIGN
+	@msgbox Text_BagItemCanBeRegistered, MSGBOX_SIGN
 	end
 
 EventScript_Return:: @ 81A77A9
@@ -1359,3 +1362,5 @@ Text_TestMsg:: @ 81ACD45
 	.include "data/text/save.inc"
 	.include "data/text/new_game_intro.inc"
 	.include "data/text/pokedude.inc"
+	.include "data/scripts/ev_iv_check.inc"
+	.include "data/scripts/debug.inc"

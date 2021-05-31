@@ -1,11 +1,12 @@
 EventScript_PkmnCenterNurse:: @ 81A6578
 	goto_if_questlog EventScript_ReleaseEnd
-	message Text_WelcomeWantToHealPkmn
-	waitmessage
-	multichoice 19, 8, MULTICHOICE_YES_NO, FALSE | (TRUE << 1)
-	switch VAR_RESULT
-	case 0, EventScript_PkmnCenterNurse_HealPkmn
-	case 1 EventScript_PkmnCenterNurse_Goodbye
+	@ message Text_WelcomeWantToHealPkmn
+	@ waitmessage
+	@ multichoice 19, 8, MULTICHOICE_YES_NO, FALSE | (TRUE << 1)
+	@ switch VAR_RESULT
+	@ case 0, EventScript_PkmnCenterNurse_HealPkmn
+	@ case 1 EventScript_PkmnCenterNurse_Goodbye
+    goto EventScript_PkmnCenterNurse_HealPkmn
 	case SCR_MENU_CANCEL, EventScript_PkmnCenterNurse_Goodbye
 	end
 
@@ -15,7 +16,7 @@ EventScript_PkmnCenterNurse_HealPkmn:: @ 81A65B8
 	waitmessage
 	call EventScript_PkmnCenterNurse_TakeAndHealPkmn
 	special SetUsedPkmnCenterQuestLogEvent
-	goto EventScript_PkmnCenterNurse_CheckTrainerTowerAndUnionRoom
+	goto EventScript_PkmnCenterNurse_ReturnPkmn
 	end
 
 EventScript_PkmnCenterNurse_TakeAndHealPkmn:: @ 81A65CE
@@ -28,24 +29,14 @@ EventScript_PkmnCenterNurse_TakeAndHealPkmn:: @ 81A65CE
 	special HealPlayerParty
 	return
 
-EventScript_PkmnCenterNurse_CheckTrainerTowerAndUnionRoom:: @ 81A65EC
-	specialvar VAR_RESULT, IsPlayerNotInTrainerTowerLobby
-	compare VAR_RESULT, FALSE
-	goto_if_eq EventScript_PkmnCenterNurse_ReturnPkmn
-	specialvar VAR_RESULT, BufferUnionRoomPlayerName
-	copyvar VAR_0x8008, VAR_RESULT
-	compare VAR_0x8008, 0
-	goto_if_eq EventScript_PkmnCenterNurse_ReturnPkmn
-	compare VAR_0x8008, 1
-	goto_if_eq EventScript_PkmnCenterNurse_PlayerWaitingInUionRoom
-	end
-
 EventScript_PkmnCenterNurse_ReturnPkmn:: @ 81A661D
-	message Text_RestoredPkmnToFullHealth
-	waitmessage
+	@ message Text_RestoredPkmnToFullHealth
+	@ waitmessage
 	applymovement VAR_LAST_TALKED, Movement_Bow
 	waitmovement 0
 	msgbox Text_WeHopeToSeeYouAgain
+	waitmessage
+	goto EventScript_PkmnCenterNurse_PlayerTurn
 	return
 
 EventScript_PkmnCenterNurse_PlayerWaitingInUionRoom:: @ 81A6636
@@ -62,6 +53,12 @@ EventScript_PkmnCenterNurse_PlayerWaitingInUionRoom:: @ 81A6636
 EventScript_PkmnCenterNurse_Goodbye:: @ 81A6663
 	msgbox Text_WeHopeToSeeYouAgain
 	return
+
+EventScript_PkmnCenterNurse_PlayerTurn::
+    applymovement OBJ_EVENT_ID_PLAYER, Movement_FaceDown
+    waitmovement 0
+    release
+    end
 
 Movement_Bow:: @ 81A666C
 	nurse_joy_bow

@@ -16,6 +16,7 @@
 #include "pokedex.h"
 #include "text_window.h"
 #include "text_window_graphics.h"
+#include "rtc.h"
 #include "constants/songs.h"
 
 enum MainMenuType
@@ -55,6 +56,7 @@ static void Task_HandleMenuInput(u8 taskId);
 static void Task_ExecuteMainMenuSelection(u8 taskId);
 static void Task_MysteryGiftError(u8 taskId);
 static void Task_ReturnToTileScreen(u8 taskId);
+static void Task_MainMenuCheckRtc(u8 taskId);
 static void MoveWindowByMenuTypeAndCursorPos(u8 menuType, u8 cursorPos);
 static bool8 HandleMenuInput(u8 taskId);
 static void PrintMessageOnWindow4(const u8 *str);
@@ -67,6 +69,7 @@ static void LoadUserFrameToBg(u8 bgId);
 static void SetStdFrame0OnBg(u8 bgId);
 static void MainMenu_DrawWindow(const struct WindowTemplate * template);
 static void MainMenu_EraseWindow(const struct WindowTemplate * template);
+static void CheckSaveblockStructSizes(void);
 
 static const u8 sString_Dummy[] = _("");
 static const u8 sString_Newline[] = _("\n");
@@ -272,6 +275,32 @@ static void Task_SetWin0BldRegsAndCheckSaveFile(u8 taskId)
             gTasks[taskId].tMenuType = MAIN_MENU_NEWGAME;
             PrintSaveErrorStatus(taskId, gText_1MSubCircuitBoardNotInstalled);
             break;
+        }
+    }
+}
+
+const u8 gBatteryDryMessage[] = _("The internal battery has run dry.\nThe game can be played.\pHowever, clock-based events will\nno longer occur.");
+void Task_MainMenuCheckRtc(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        REG_WIN0H = 0;
+        REG_WIN0V = 0;
+        REG_WININ = 0x1111;
+        REG_WINOUT = 49;
+        REG_BLDCNT = 241;
+        REG_BLDALPHA = 0;
+        REG_BLDY = 7;
+
+        if (!(RtcGetErrorStatus() & RTC_ERR_FLAG_MASK))
+        {
+            gTasks[taskId].func = Task_SetWin0BldRegsNoSaveFileCheck;
+        }
+        else
+        {
+            SetStdFrame0OnBg(0);
+            PrintSaveErrorStatus(taskId, gBatteryDryMessage);
+            gTasks[taskId].func = Task_SaveErrorStatus_RunPrinterThenWaitButton;
         }
     }
 }
@@ -785,4 +814,20 @@ static void MainMenu_EraseWindow(const struct WindowTemplate * windowTemplate)
         2
     );
     CopyBgTilemapBufferToVram(windowTemplate->bg);
+}
+
+static void CheckSaveblockStructSizes(void)
+{  
+#if DEBUG
+    mgba_printf(MGBA_LOG_INFO, "SaveBlock2 size (max 3968):");
+    mgba_printf(MGBA_LOG_INFO, "%10d", sizeof(struct SaveBlock2));
+    mgba_printf(MGBA_LOG_INFO, "SaveBlock1 size (max 15872):");
+    mgba_printf(MGBA_LOG_INFO, "%10d", sizeof(struct SaveBlock1));
+    mgba_printf(MGBA_LOG_INFO, "PokemonStorage size (max 35712):");
+    mgba_printf(MGBA_LOG_INFO, "%10d", sizeof(struct PokemonStorage));
+    
+    if (sizeof(struct SaveBlock2) > 3968 || sizeof(struct SaveBlock1) > 15872
+        || sizeof(struct PokemonStorage) > 35712)
+    mgba_printf(MGBA_LOG_FATAL, "One or more save structs are too big.");
+#endif
 }

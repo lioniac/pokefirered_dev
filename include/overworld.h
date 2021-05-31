@@ -65,6 +65,7 @@ extern u8 gFieldLinkPlayerCount;
 extern u8 gLocalLinkPlayerId;
 
 void IncrementGameStat(u8 index);
+void IncrementSeasonPedometer();
 
 void Overworld_SetMapObjTemplateCoords(u8, s16, s16);
 void Overworld_SetObjEventTemplateMovementType(u8, u8);
@@ -175,7 +176,7 @@ bool32 Overworld_RecvKeysFromLinkIsRunning(void);
 void OverworldWhiteOutGetMoneyLoss(void);
 u8 GetCurrentMapBattleScene(void);
 void Overworld_ResetStateAfterFly(void);
-bool8 sub_8055B38(u16 metatileBehavior);
+bool8 MetatileBehavior_IsSurfableWaterOrUnderwater(u16 metatileBehavior);
 void Overworld_ResetMapMusic(void);
 u16 QueueExitLinkRoomKey(void);
 u16 sub_8057F34(void);
@@ -190,6 +191,7 @@ void StoreInitialPlayerAvatarState(void);
 void UpdateEscapeWarp(s16 x, s16 y);
 bool8 SetDiveWarpEmerge(u16 x, u16 y);
 bool8 SetDiveWarpDive(u16 x, u16 y);
+void FieldClearVBlankHBlankCallbacks(void);
 
 extern u16 *gBGTilemapBuffers1;
 extern u16 *gBGTilemapBuffers2;

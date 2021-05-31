@@ -14,7 +14,7 @@ struct FieldInput
     bool8 tookStep:1;
     bool8 pressedBButton:1;
     bool8 pressedRButton:1;
-    bool8 input_field_1_0:1;
+    bool8 pressedLButton:1;
     bool8 input_field_1_1:1;
     bool8 input_field_1_2:1;
     bool8 input_field_1_3:1;
@@ -36,5 +36,6 @@ int ProcessPlayerFieldInput(struct FieldInput *input);
 void FieldInput_HandleCancelSignpost(struct FieldInput * input);
 void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys);
 void HandleBoulderActivateVictoryRoadSwitch(u16 x, u16 y);
+u8 TrySetDiveWarp(void);
 
 #endif //GUARD_FIELD_CONTROL_AVATAR_H

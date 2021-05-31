@@ -41,6 +41,8 @@
 #include "constants/menu.h"
 #include "constants/event_objects.h"
 #include "constants/metatile_labels.h"
+#include "rtc.h"
+#include "clock.h"
 
 static EWRAM_DATA u8 sElevatorCurrentFloorWindowId = 0;
 static EWRAM_DATA u16 sElevatorScroll = 0;
@@ -1747,7 +1749,12 @@ u16 GetHiddenItemAttr(u32 hiddenItem, u8 attr)
     if (attr == 0)
         return hiddenItem & 0xFFFF;
     else if (attr == 1)
-        return ((hiddenItem >> 16) & 0xFF) + 1000;
+    {
+        if (((hiddenItem >> 16) & 0xFF) <= 190)
+            return ((hiddenItem >> 16) & 0xFF) + 1000;
+        else
+            return ((hiddenItem >> 16) & 0xFF);
+    }
     else if (attr == 2)
         return (hiddenItem >> 24) & 0x7F;
     else if (attr == 3)
@@ -2548,4 +2555,184 @@ static void Task_WingFlapSound(u8 taskId)
     }
     if (data[0] == gSpecialVar_0x8004 - 1)
         DestroyTask(taskId);
+}
+
+// Stores the chosen Pokémon's HP, DEF and SP. DEF IVs in the Buffers 1, 2 and 3.
+void RyuIvCheckerDef(void)
+{
+    u8 HpIv = 0;
+    u8 DefIv = 0;
+    u8 SpDefIv = 0;
+    HpIv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_HP_IV);
+    DefIv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_DEF_IV);
+    SpDefIv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPDEF_IV);
+    ConvertIntToDecimalStringN(gStringVar1, HpIv, STR_CONV_MODE_LEADING_ZEROS, 2);
+    ConvertIntToDecimalStringN(gStringVar2, DefIv, STR_CONV_MODE_LEADING_ZEROS, 2);
+    ConvertIntToDecimalStringN(gStringVar3, SpDefIv, STR_CONV_MODE_LEADING_ZEROS, 2);
+}
+
+// Stores the chosen Pokémon's ATK, SPD and SP. ATK IVs in the Buffers 1, 2 and 3.
+void RyuIvCheckerOff(void)
+{
+    u8 AtkIv = 0;
+    u8 SpAtkIv = 0;
+    u8 SpeIv = 0;
+    AtkIv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_ATK_IV);
+    SpAtkIv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPATK_IV);
+    SpeIv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPEED_IV);
+    ConvertIntToDecimalStringN(gStringVar1, AtkIv, STR_CONV_MODE_LEADING_ZEROS, 2);
+    ConvertIntToDecimalStringN(gStringVar2, SpAtkIv, STR_CONV_MODE_LEADING_ZEROS, 2);
+    ConvertIntToDecimalStringN(gStringVar3, SpeIv, STR_CONV_MODE_LEADING_ZEROS, 2);
+}
+
+// Stores the chosen Pokémon's HP, DEF and SP. DEF EVs in the Buffers 1, 2 and 3.
+void RyuEvCheckerDef(void)
+{
+    u8 HpEv = 0;
+    u8 DefEv = 0;
+    u8 SpDefEv = 0;
+    HpEv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_HP_EV);
+    DefEv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_DEF_EV);
+    SpDefEv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPDEF_EV);
+    ConvertIntToDecimalStringN(gStringVar1, HpEv, STR_CONV_MODE_LEADING_ZEROS, 3);
+    ConvertIntToDecimalStringN(gStringVar2, DefEv, STR_CONV_MODE_LEADING_ZEROS, 3);
+    ConvertIntToDecimalStringN(gStringVar3, SpDefEv, STR_CONV_MODE_LEADING_ZEROS, 3);
+}
+
+// Stores the chosen Pokémon's ATK, SPD and SP. ATK EVs in the Buffers 1, 2 and 3.
+void RyuEvCheckerOff(void)
+{
+    u8 AtkEv = 0;
+    u8 SpAtkEv = 0;
+    u8 SpeEv = 0;
+    AtkEv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_ATK_EV);
+    SpAtkEv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPATK_EV);
+    SpeEv = GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPEED_EV);
+    ConvertIntToDecimalStringN(gStringVar1, AtkEv, STR_CONV_MODE_LEADING_ZEROS, 3);
+    ConvertIntToDecimalStringN(gStringVar2, SpAtkEv, STR_CONV_MODE_LEADING_ZEROS, 3);
+    ConvertIntToDecimalStringN(gStringVar3, SpeEv, STR_CONV_MODE_LEADING_ZEROS, 3);
+}
+
+// Sets the EVs of a chosen Pokémon's 6 stats to 0.
+void RyuResetEvs(void)
+{
+    u8 ev = 0;
+    PlaySE(SE_EXP);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_HP_EV, &ev);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_ATK_EV, &ev);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_DEF_EV, &ev);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPATK_EV, &ev);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPDEF_EV, &ev);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPEED_EV, &ev);
+}
+
+// Sets the HP EVs of the Pokémon in gSpecialVar_0x8004 according to the current value of var 0x8000 
+void SetHpEvs(void)
+{
+    u8 HpEv = gSpecialVar_0x8000;
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_HP_EV, &HpEv);
+    CalculateMonStats(&gPlayerParty[gSpecialVar_0x8004]);
+}
+
+// Sets the Atk EVs of the Pokémon in gSpecialVar_0x8004 according to the current value of var 0x8001
+void SetAtkEvs(void)
+{
+    u8 AtkEv = gSpecialVar_0x8001;
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_ATK_EV, &AtkEv);
+    CalculateMonStats(&gPlayerParty[gSpecialVar_0x8004]);
+}
+
+// Sets the Def EVs of the Pokémon in gSpecialVar_0x8004 according to the current value of var 0x8002
+void SetDefEvs(void)
+{
+    u8 DefEv = gSpecialVar_0x8002;
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_DEF_EV, &DefEv);
+    CalculateMonStats(&gPlayerParty[gSpecialVar_0x8004]);
+}
+
+// Sets the Spd EVs of the Pokémon in gSpecialVar_0x8004 according to the current value of var 0x8003
+void SetSpdEvs(void)
+{
+    u8 SpdEv = gSpecialVar_0x8003;
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPEED_EV, &SpdEv);
+    CalculateMonStats(&gPlayerParty[gSpecialVar_0x8004]);
+}
+
+// Sets the SpAtk EVs of the Pokémon in gSpecialVar_0x8004 according to the current value of var 0x8005
+void SetSpAtkEvs(void)
+{
+    u8 SpAtkEv = gSpecialVar_0x8005;
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPATK_EV, &SpAtkEv);
+    CalculateMonStats(&gPlayerParty[gSpecialVar_0x8004]);
+}
+
+// Sets the SpDef EVs of the Pokémon in gSpecialVar_0x8004 according to the current value of var 0x8006
+void SetSpDefEvs(void)
+{
+    u8 SpDefEv = gSpecialVar_0x8006;
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_SPDEF_EV, &SpDefEv);
+    CalculateMonStats(&gPlayerParty[gSpecialVar_0x8004]);
+}
+
+// Overwrites the moves of the Pokémon in gSpecialVar_0x8004 according to the current values of vars 0x8000, 0x8001, 0x8002 and 0x8003
+void SetMonMoves(void)
+{
+    u16 move1 = gSpecialVar_0x8000;
+    u16 move2 = gSpecialVar_0x8001;
+    u16 move3 = gSpecialVar_0x8002;
+    u16 move4 = gSpecialVar_0x8003;
+
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_MOVE1, &move1);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_MOVE2, &move2);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_MOVE3, &move3);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_MOVE4, &move4);
+}
+
+// Restores the default amount of PP for each move, complementing SetMonMoves depending on the use
+void RestoreMovesPP(void)
+{
+    u16 move1 = gSpecialVar_0x8000;
+    u16 move2 = gSpecialVar_0x8001;
+    u16 move3 = gSpecialVar_0x8002;
+    u16 move4 = gSpecialVar_0x8003;
+
+    u8 ppBonuses = GetMonData(gPlayerParty[gSpecialVar_0x8004], MON_DATA_PP_BONUSES);
+    u8 move1pp = CalculatePPWithBonus(move1, ppBonuses, move1);
+    u8 move2pp = CalculatePPWithBonus(move2, ppBonuses, move2);
+    u8 move3pp = CalculatePPWithBonus(move3, ppBonuses, move3);
+    u8 move4pp = CalculatePPWithBonus(move4, ppBonuses, move4);
+
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_PP1, &move1pp);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_PP2, &move2pp);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_PP3, &move3pp);
+    SetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_PP4, &move4pp);
+}
+
+void GetCurrentDayString(void)
+{
+    RtcCalcLocalTime();
+    switch (gLocalTime.dayOfWeek)
+    {
+    case 0:
+        StringCopy(gStringVar1, gText_Sunday);
+        break;
+    case 1:
+        StringCopy(gStringVar1, gText_Monday);
+        break;
+    case 2:
+        StringCopy(gStringVar1, gText_Tuesday);
+        break;
+    case 3:
+        StringCopy(gStringVar1, gText_Wednesday);
+        break;
+    case 4:
+        StringCopy(gStringVar1, gText_Thursday);
+        break;
+    case 5:
+        StringCopy(gStringVar1, gText_Friday);
+        break;
+    case 6:
+        StringCopy(gStringVar1, gText_Saturday);
+        break;
+    }
 }

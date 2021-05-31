@@ -11,6 +11,7 @@
 #include "battle_gfx_sfx_util.h"
 #include "battle_util2.h"
 #include "battle_bg.h"
+#include "constants/pokemon.h"
 
 /*
     Banks are a name given to what could be called a 'battlerId' or 'monControllerId'.
@@ -68,44 +69,25 @@
 #define MOVE_TARGET_FOES_AND_ALLY     0x20
 #define MOVE_TARGET_OPPONENTS_FIELD   0x40
 
-struct TrainerMonNoItemDefaultMoves
-{
-    u16 iv;
-    u8 lvl;
-    u16 species;
-};
-
-struct TrainerMonItemDefaultMoves
-{
-    u16 iv;
-    u8 lvl;
-    u16 species;
-    u16 heldItem;
-};
-
-struct TrainerMonNoItemCustomMoves
-{
-    u16 iv;
-    u8 lvl;
-    u16 species;
-    u16 moves[4];
-};
-
-struct TrainerMonItemCustomMoves
+struct TrainerMon
 {
     u16 iv;
     u8 lvl;
     u16 species;
     u16 heldItem;
     u16 moves[4];
+    u8 nickname[POKEMON_NAME_LENGTH + 1];
+    u8 gender;
+    u8 nature;
+    u8 ability;
+    u8 evs[NUM_STATS];
+    u8 ball;
+    u8 friendship;
 };
 
 union TrainerMonPtr
 {
-    const struct TrainerMonNoItemDefaultMoves *NoItemDefaultMoves;
-    const struct TrainerMonNoItemCustomMoves *NoItemCustomMoves;
-    const struct TrainerMonItemDefaultMoves *ItemDefaultMoves;
-    const struct TrainerMonItemCustomMoves *ItemCustomMoves;
+    const struct TrainerMon *TrainerMon;
 };
 
 struct Trainer
@@ -120,6 +102,7 @@ struct Trainer
     /*0x1C*/ u32 aiFlags;
     /*0x20*/ u8 partySize;
     /*0x24*/ const union TrainerMonPtr party;
+    /*0x??*/ u16 rngSeed;
 };
 
 extern const struct Trainer gTrainers[];
@@ -463,8 +446,8 @@ extern struct BattleStruct *gBattleStruct;
         typeArg = gBattleMoves[move].type;                  \
 }
 
-#define IS_TYPE_PHYSICAL(moveType)(moveType < TYPE_MYSTERY)
-#define IS_TYPE_SPECIAL(moveType)(moveType > TYPE_MYSTERY)
+#define IS_TYPE_PHYSICAL(move)(move.category == MOVE_CATEGORY_PHYSICAL)
+#define IS_TYPE_SPECIAL(move)(move.category == MOVE_CATEGORY_SPECIAL)
 #define TARGET_TURN_DAMAGED ((gSpecialStatuses[gBattlerTarget].physicalDmg != 0 || gSpecialStatuses[gBattlerTarget].specialDmg != 0))
 #define IS_BATTLER_OF_TYPE(battlerId, type)((gBattleMons[battlerId].type1 == type || gBattleMons[battlerId].type2 == type))
 #define SET_BATTLER_TYPE(battlerId, type)   \
@@ -508,6 +491,7 @@ struct BattleScripting
     u8 reshowMainState;
     u8 reshowHelperState;
     u8 field_23;
+    bool8 monCaught;
 };
 
 enum
@@ -539,7 +523,9 @@ struct BattleAnimationInfo
     u8 field_5;
     u8 field_6;
     u8 field_7;
-    u8 ballThrowCaseId;
+    u8 ballThrowCaseId:6;
+    u8 isCriticalCapture:1;
+    u8 criticalCaptureSuccess:1;
     u8 healthboxSlideInStarted : 1;
     u8 field_9_x2 : 1;
     u8 field_9_x1C : 3;

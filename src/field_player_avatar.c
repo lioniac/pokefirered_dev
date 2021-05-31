@@ -20,6 +20,7 @@
 #include "script.h"
 #include "strings.h"
 #include "wild_encounter.h"
+#include "follow_me.h"
 #include "constants/event_object_movement.h"
 #include "constants/event_objects.h"
 #include "constants/songs.h"
@@ -224,7 +225,7 @@ static const struct {
     bool8 (*check)(u8 metatileBehavior);
     bool8 (*apply)(void);
 } sForcedMovementFuncs[] = {
-    {MetatileBehavior_IsUnknownMovement48, ForcedMovement_Slip},
+    {MetatileBehavior_IsTrickHouseSlipperyFloor, ForcedMovement_Slip},
     {MetatileBehavior_IsIce_2, ForcedMovement_Slip},
     {MetatileBehavior_IsWalkSouth, ForcedMovement_WalkSouth},
     {MetatileBehavior_IsWalkNorth, ForcedMovement_WalkNorth},
@@ -504,27 +505,24 @@ static void PlayerNotOnBikeMoving(u8 direction, u16 heldKeys)
 
     if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_SURFING)
     {
-        // speed 2 is fast, same speed as running
-        PlayerGoSpeed2(direction);
+        if (heldKeys & B_BUTTON)
+            PlayerGoSpeed2(direction);
+        else
+            sub_805C164(direction);
+
         return;
     }
 
-    if ((heldKeys & B_BUTTON) && FlagGet(FLAG_SYS_B_DASH)
-        && !IsRunningDisallowed(gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior))
+    if (heldKeys & B_BUTTON && !(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_UNDERWATER))
+        PlayerGoSpeed1(direction);
+    else if (gSaveBlock2Ptr->autoRun && !(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_UNDERWATER) && !IsRunningDisallowed(gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior))
     {
-        if (PlayerIsMovingOnRockStairs(direction))
-            PlayerRunSlow(direction);
-        else
-            PlayerRun(direction);
+        PlayerRun(direction);
         gPlayerAvatar.flags |= PLAYER_AVATAR_FLAG_DASH;
-        return;
     }
     else
     {
-        if (PlayerIsMovingOnRockStairs(direction))
-            PlayerGoSlow(direction);
-        else
-            PlayerGoSpeed1(direction);
+        PlayerGoSpeed1(direction);
     }
 }
 
@@ -731,7 +729,10 @@ static void PlayerAvatarTransition_Surfing(struct ObjectEvent * playerObjEvent)
 
 static void PlayerAvatarTransition_Underwater(struct ObjectEvent * playerObjEvent)
 {
-
+    ObjectEventSetGraphicsId(playerObjEvent, GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_UNDERWATER));
+    ObjectEventTurn(playerObjEvent, playerObjEvent->movementDirection);
+    SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_UNDERWATER);
+    playerObjEvent->fieldEffectSpriteId = CreateDiveBobbingSprite(playerObjEvent->spriteId);
 }
 
 static void PlayerAvatarTransition_ReturnToField(struct ObjectEvent * playerObjEvent)
@@ -1126,6 +1127,7 @@ void StopPlayerAvatar(void)
     }
 }
 
+// this table originally had NOTHING to do with the player avatar state. It has been updated to be more consistent with the player avatar state flags
 static const u8 sPlayerAvatarGfxIds[][GENDER_COUNT] = {
     [PLAYER_AVATAR_GFX_NORMAL]     = {OBJ_EVENT_GFX_RED_NORMAL,     OBJ_EVENT_GFX_GREEN_NORMAL},
     [PLAYER_AVATAR_GFX_BIKE]       = {OBJ_EVENT_GFX_RED_BIKE,       OBJ_EVENT_GFX_GREEN_BIKE},
@@ -1145,6 +1147,7 @@ u8 GetRivalAvatarGraphicsIdByStateIdAndGender(u8 state, u8 gender)
     return GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gender);
 }
 
+// game freak is dumb and decided to make this state-based table not relate to the states defined in global.fieldmap.h
 u8 GetPlayerAvatarGraphicsIdByStateIdAndGender(u8 state, u8 gender)
 {
     return sPlayerAvatarGfxIds[state][gender];
@@ -1231,16 +1234,20 @@ void SetPlayerAvatarStateMask(u8 flags)
     gPlayerAvatar.flags |= flags;
 }
 
-static const u8 sPlayerAvatarGfxToStateFlag[][3][GENDER_COUNT] = {
-    [MALE] = {
+static const u8 sPlayerAvatarGfxToStateFlag[][4][2] = {
+    // Male
+    {
         {OBJ_EVENT_GFX_RED_NORMAL, PLAYER_AVATAR_FLAG_ON_FOOT},
         {OBJ_EVENT_GFX_RED_BIKE,   PLAYER_AVATAR_FLAG_MACH_BIKE},
         {OBJ_EVENT_GFX_RED_SURF,   PLAYER_AVATAR_FLAG_SURFING},
+        {OBJ_EVENT_GFX_RED_SURF,   PLAYER_AVATAR_FLAG_UNDERWATER},  //change to your male dive sprite
     },
-    [FEMALE] = {
+    // Female
+    {
         {OBJ_EVENT_GFX_GREEN_NORMAL, PLAYER_AVATAR_FLAG_ON_FOOT},
         {OBJ_EVENT_GFX_GREEN_BIKE,   PLAYER_AVATAR_FLAG_MACH_BIKE},
         {OBJ_EVENT_GFX_GREEN_SURF,   PLAYER_AVATAR_FLAG_SURFING},
+        {OBJ_EVENT_GFX_GREEN_SURF,   PLAYER_AVATAR_FLAG_UNDERWATER},  //change to your female dive sprite
     }
 };
 
@@ -1578,6 +1585,7 @@ static void CreateStopSurfingTask(u8 direction)
     taskId = CreateTask(Task_StopSurfingInit, 0xFF);
     gTasks[taskId].data[0] = direction;
     Task_StopSurfingInit(taskId);
+    PrepareFollowerDismountSurf();
 }
 
 void CreateStopSurfingTask_NoMusicChange(u8 direction)
@@ -1612,7 +1620,7 @@ static void Task_StopSurfingInit(u8 taskId)
         if (!ObjectEventClearHeldMovementIfFinished(playerObjEvent))
             return;
     }
-    sub_80DC44C(playerObjEvent->fieldEffectSpriteId, 2);
+    BindFieldEffectToSprite(playerObjEvent->fieldEffectSpriteId, 2);
     QL_TryRecordPlayerStepWithDuration0(playerObjEvent, sub_80641EC((u8)gTasks[taskId].data[0]));
     gTasks[taskId].func = Task_WaitStopSurfing;
 }
@@ -1629,6 +1637,7 @@ static void Task_WaitStopSurfing(u8 taskId)
         ScriptContext2_Disable();
         UnfreezeObjectEvents();
         DestroySprite(&gSprites[playerObjEvent->fieldEffectSpriteId]);
+        playerObjEvent->triggerGroundEffectsOnMove = TRUE;
         DestroyTask(taskId);
         SetHelpContextForMap();
     }

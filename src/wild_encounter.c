@@ -12,6 +12,8 @@
 #include "script.h"
 #include "link.h"
 #include "quest_log.h"
+#include "clock.h"
+#include "rtc.h"
 #include "constants/maps.h"
 #include "constants/abilities.h"
 #include "constants/items.h"
@@ -197,7 +199,18 @@ static u16 GetCurrentMapWildMonHeaderId(void)
 
                 i += alteringCaveId;
             }
-
+            else
+            {
+                if (gWildMonHeaders[i+(gSaveBlock1Ptr->season * 2)].mapGroup == gSaveBlock1Ptr->location.mapGroup &&
+                    gWildMonHeaders[i+(gSaveBlock1Ptr->season * 2)].mapNum == gSaveBlock1Ptr->location.mapNum)
+                {
+                    RtcCalcLocalTime();
+                    if (gLocalTime.hours >= 18)
+                        i += (gSaveBlock1Ptr->season * 2) + 1;
+                    else
+                        i += (gSaveBlock1Ptr->season * 2);
+                }
+            }
             if (!UnlockedTanobyOrAreNotInTanoby())
                 break;
             return i;

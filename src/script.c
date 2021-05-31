@@ -2,6 +2,7 @@
 #include "script.h"
 #include "event_data.h"
 #include "quest_log.h"
+#include "constants/map_scripts.h"
 
 #define RAM_SCRIPT_MAGIC 51
 #define SCRIPT_STACK_SIZE 20
@@ -428,7 +429,7 @@ void RunOnReturnToFieldMapScript(void)
 
 void RunOnDiveWarpMapScript(void)
 {
-    mapheader_run_script_by_tag(6);
+    mapheader_run_script_by_tag(MAP_SCRIPT_ON_DIVE_WARP);
 }
 
 bool8 TryRunOnFrameMapScript(void)
@@ -551,4 +552,12 @@ void MEventSetRamScript(u8 *script, u16 scriptSize)
     if (scriptSize > sizeof(gSaveBlock1Ptr->ramScript.data.script))
         scriptSize = sizeof(gSaveBlock1Ptr->ramScript.data.script);
     InitRamScript(script, scriptSize, 0xFF, 0xFF, 0xFF);
+}
+
+//new
+u8* GetScriptDataPointer(u8 index)
+{
+    struct ScriptContext *ctx = &sScriptContext1;
+
+    return (T1_READ_PTR(&ctx->data[index]));
 }

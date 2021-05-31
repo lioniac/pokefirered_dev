@@ -543,52 +543,21 @@ static u16 GetSumOfPlayerPartyLevel(u8 numMons)
 
 static u8 GetSumOfEnemyPartyLevel(u16 opponentId, u8 numMons)
 {
+    const struct TrainerMon *party;
     u8 i;
     u8 sum;
     u32 count = numMons;
 
+    party = gTrainers[opponentId].party.TrainerMon;
+
     if (gTrainers[opponentId].partySize < count)
         count = gTrainers[opponentId].partySize;
+    
     sum = 0;
-    switch (gTrainers[opponentId].partyFlags)
-    {
-    case 0:
-        {
-            const struct TrainerMonNoItemDefaultMoves *party;
 
-            party = gTrainers[opponentId].party.NoItemDefaultMoves;
-            for (i = 0; i < count; ++i)
-                sum += party[i].lvl;
-        }
-        break;
-    case F_TRAINER_PARTY_CUSTOM_MOVESET:
-        {
-            const struct TrainerMonNoItemCustomMoves *party;
+    for (i = 0; i < count; i++)
+        sum += party[i].lvl;
 
-            party = gTrainers[opponentId].party.NoItemCustomMoves;
-            for (i = 0; i < count; ++i)
-                sum += party[i].lvl;
-        }
-        break;
-    case F_TRAINER_PARTY_HELD_ITEM:
-        {
-            const struct TrainerMonItemDefaultMoves *party;
-
-            party = gTrainers[opponentId].party.ItemDefaultMoves;
-            for (i = 0; i < count; ++i)
-                sum += party[i].lvl;
-        }
-        break;
-    case F_TRAINER_PARTY_CUSTOM_MOVESET | F_TRAINER_PARTY_HELD_ITEM:
-        {
-            const struct TrainerMonItemCustomMoves *party;
-
-            party = gTrainers[opponentId].party.ItemCustomMoves;
-            for (i = 0; i < count; ++i)
-                sum += party[i].lvl;
-        }
-        break;
-    }
     return sum;
 }
 
@@ -879,8 +848,8 @@ void ClearTrainerFlag(u16 trainerId)
 void StartTrainerBattle(void)
 {
     gBattleTypeFlags = BATTLE_TYPE_TRAINER;
-    if (GetTrainerBattleMode() == TRAINER_BATTLE_EARLY_RIVAL && GetRivalBattleFlags() & RIVAL_BATTLE_TUTORIAL)
-        gBattleTypeFlags |= BATTLE_TYPE_FIRST_BATTLE;
+    /*if (GetTrainerBattleMode() == TRAINER_BATTLE_EARLY_RIVAL && GetRivalBattleFlags() & RIVAL_BATTLE_TUTORIAL)
+        gBattleTypeFlags |= BATTLE_TYPE_FIRST_BATTLE;*/
     gMain.savedCallback = CB2_EndTrainerBattle;
     DoTrainerBattle();
     ScriptContext1_Stop();

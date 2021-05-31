@@ -738,8 +738,8 @@ static void SpawnListMenuScrollIndicatorSprites(void)
     gSprites[sMoveRelearner->spriteIds[0]].data[0] = 2;
     gSprites[sMoveRelearner->spriteIds[0]].data[2] = -1;
 
-    // Bug: This should be using the second element of spriteIds.
-    sMoveRelearner->spriteIds[0] = CreateSprite(&sSpriteTemplate_MoveRelearnerListMenuScrollIndicators, 200, 108, 0);
+    // Bug Fixed: This should be using the second element of spriteIds.
+    sMoveRelearner->spriteIds[1] = CreateSprite(&sSpriteTemplate_MoveRelearnerListMenuScrollIndicators, 200, 108, 0);
     gSprites[sMoveRelearner->spriteIds[0]].data[0] = 2;
     gSprites[sMoveRelearner->spriteIds[0]].data[2] = 1;
     for (i = 0; i < 2; i++)
@@ -844,11 +844,11 @@ static void PrintMoveInfo(u16 move)
 
 static void LoadMoveInfoUI(void)
 {
-    BlitMoveInfoIcon(0, 19, 1, 4);
-    BlitMoveInfoIcon(1, 20, 0, 4);
-    BlitMoveInfoIcon(1, 21, 0, 19);
-    BlitMoveInfoIcon(0, 22, 1, 19);
-    BlitMoveInfoIcon(0, 23, 1, 34);
+    BlitMoveInfoIcon(0, 20, 1, 4);
+    BlitMoveInfoIcon(1, 21, 0, 4);
+    BlitMoveInfoIcon(1, 22, 0, 19);
+    BlitMoveInfoIcon(0, 23, 1, 19);
+    BlitMoveInfoIcon(0, 24, 1, 34);
     PutWindowTilemap(0);
     PutWindowTilemap(1);
     PutWindowTilemap(4);

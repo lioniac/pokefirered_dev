@@ -36,6 +36,10 @@
 #include "help_system.h"
 #include "constants/songs.h"
 #include "constants/field_weather.h"
+#include "quest_menu.h"
+#include "clock.h"
+#include "rtc.h"
+#include "string_util.h"
 
 enum StartMenuOption
 {
@@ -48,6 +52,14 @@ enum StartMenuOption
     STARTMENU_EXIT,
     STARTMENU_RETIRE,
     STARTMENU_PLAYER2,
+    STARTMENU_QUESTS,
+    STARTMENU_L,
+    STARTMENU_R,
+    STARTMENU_POKENAV,
+    STARTMENU_MAP,
+    STARTMENU_NEWS,
+    STARTMENU_OUTFIT,
+    STARTMENU_FCHECKER,
     MAX_STARTMENU_ITEMS
 };
 
@@ -65,6 +77,7 @@ static EWRAM_DATA u8 sNumStartMenuItems = 0;
 static EWRAM_DATA u8 sStartMenuOrder[MAX_STARTMENU_ITEMS] = {};
 static EWRAM_DATA s8 sDrawStartMenuState[2] = {};
 static EWRAM_DATA u8 sSafariZoneStatsWindowId = 0;
+static EWRAM_DATA u8 gStartMenu_Clock[] = _("");
 static ALIGNED(4) EWRAM_DATA u8 sSaveStatsWindowId = 0;
 
 static u8 (*sSaveDialogCB)(void);
@@ -75,6 +88,7 @@ static void SetUpStartMenu_Link(void);
 static void SetUpStartMenu_UnionRoom(void);
 static void SetUpStartMenu_SafariZone(void);
 static void SetUpStartMenu_NormalField(void);
+static void SetUpStartMenu_NormalField_R(void);
 static bool8 StartCB_HandleInput(void);
 static void StartMenu_FadeScreenIfLeavingOverworld(void);
 static bool8 StartMenuPokedexSanityCheck(void);
@@ -87,6 +101,7 @@ static bool8 StartMenuOptionCallback(void);
 static bool8 StartMenuExitCallback(void);
 static bool8 StartMenuSafariZoneRetireCallback(void);
 static bool8 StartMenuLinkPlayerCallback(void);
+static bool8 StartMenuQuestsCallback(void);
 static bool8 StartCB_Save1(void);
 static bool8 StartCB_Save2(void);
 static void StartMenu_PrepareForSave(void);
@@ -111,7 +126,16 @@ static void task50_after_link_battle_save(u8 taskId);
 static void PrintSaveStats(void);
 static void CloseSaveStatsWindow(void);
 static void CloseStartMenu(void);
+static void GetStartMenuClock(void);
+static void StartMenu_PrintClock(void);
 
+static const u8 gStartMenuText_Label_L[] = _(">L  R ");
+static const u8 gStartMenuText_Label_R[] = _(" L >R ");
+static const u8 gStartMenuText_Pokenav[] = _("POKéNAV");
+static const u8 gStartMenuText_Map[] = _("MAP");
+static const u8 gStartMenuText_News[] = _("NEWS");
+static const u8 gStartMenuText_Outfit[] = _("OUTFIT");
+static const u8 gStartMenuText_FChecker[] = _("F.CHECK");
 static const struct MenuAction sStartMenuActionTable[] = {
     { gStartMenuText_Pokedex, {.u8_void = StartMenuPokedexCallback} },
     { gStartMenuText_Pokemon, {.u8_void = StartMenuPokemonCallback} },
@@ -121,7 +145,15 @@ static const struct MenuAction sStartMenuActionTable[] = {
     { gStartMenuText_Option, {.u8_void = StartMenuOptionCallback} },
     { gStartMenuText_Exit, {.u8_void = StartMenuExitCallback} },
     { gStartMenuText_Retire, {.u8_void = StartMenuSafariZoneRetireCallback} },
-    { gStartMenuText_Player, {.u8_void = StartMenuLinkPlayerCallback} }
+    { gStartMenuText_Player, {.u8_void = StartMenuLinkPlayerCallback} },
+    { gStartMenuText_Quests, {.u8_void = StartMenuQuestsCallback} },
+    { gStartMenuText_Label_L, {.u8_void = StartMenuExitCallback} },
+    { gStartMenuText_Label_R, {.u8_void = StartMenuExitCallback} },
+    { gStartMenuText_Pokenav, {.u8_void = StartMenuExitCallback} },
+    { gStartMenuText_Map, {.u8_void = StartMenuExitCallback} },
+    { gStartMenuText_News, {.u8_void = StartMenuExitCallback} },
+    { gStartMenuText_Outfit, {.u8_void = StartMenuExitCallback} },
+    { gStartMenuText_FChecker, {.u8_void = StartMenuExitCallback} },
 };
 
 static const struct WindowTemplate sSafariZoneStatsWindowTemplate = {
@@ -143,7 +175,8 @@ static const u8 *const sStartMenuDescPointers[] = {
     gStartMenuDesc_Option,
     gStartMenuDesc_Exit,
     gStartMenuDesc_Retire,
-    gStartMenuDesc_Player
+    gStartMenuDesc_Player,
+    gStartMenuDesc_Quests
 };
 
 static const struct BgTemplate sBGTemplates_AfterLinkSaveMessage[] = {
@@ -192,9 +225,19 @@ static void SetUpStartMenu(void)
     else if (InUnionRoom() == TRUE)
         SetUpStartMenu_UnionRoom();
     else if (GetSafariZoneFlag() == TRUE)
-        SetUpStartMenu_SafariZone();
+    {
+        if (gSaveBlock1Ptr->rMenu == TRUE)
+            SetUpStartMenu_NormalField_R();
+        else
+            SetUpStartMenu_SafariZone();
+    }
     else
-        SetUpStartMenu_NormalField();
+    {
+        if (gSaveBlock1Ptr->rMenu == TRUE)
+            SetUpStartMenu_NormalField_R();
+        else
+            SetUpStartMenu_NormalField();
+    }
 }
 
 static void AppendToStartMenuItems(u8 newEntry)
@@ -204,26 +247,41 @@ static void AppendToStartMenuItems(u8 newEntry)
 
 static void SetUpStartMenu_NormalField(void)
 {
-    if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE)
-        AppendToStartMenuItems(STARTMENU_POKEDEX);
+    AppendToStartMenuItems(STARTMENU_L);
+    AppendToStartMenuItems(STARTMENU_BAG);
+    if (FlagGet(FLAG_SYS_QUEST_MENU_GET) == TRUE)
+        AppendToStartMenuItems(STARTMENU_QUESTS);
     if (FlagGet(FLAG_SYS_POKEMON_GET) == TRUE)
         AppendToStartMenuItems(STARTMENU_POKEMON);
-    AppendToStartMenuItems(STARTMENU_BAG);
+    if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE)
+    {
+        AppendToStartMenuItems(STARTMENU_POKEDEX);
+        AppendToStartMenuItems(STARTMENU_POKENAV);
+    }
+    AppendToStartMenuItems(STARTMENU_MAP);
+}
+
+static void SetUpStartMenu_NormalField_R(void)
+{
+    AppendToStartMenuItems(STARTMENU_R);
+    AppendToStartMenuItems(STARTMENU_NEWS);
+    AppendToStartMenuItems(STARTMENU_OUTFIT);
+    AppendToStartMenuItems(STARTMENU_FCHECKER);
     AppendToStartMenuItems(STARTMENU_PLAYER);
     AppendToStartMenuItems(STARTMENU_SAVE);
     AppendToStartMenuItems(STARTMENU_OPTION);
-    AppendToStartMenuItems(STARTMENU_EXIT);
 }
 
 static void SetUpStartMenu_SafariZone(void)
 {
+    AppendToStartMenuItems(STARTMENU_L);
     AppendToStartMenuItems(STARTMENU_RETIRE);
-    AppendToStartMenuItems(STARTMENU_POKEDEX);
-    AppendToStartMenuItems(STARTMENU_POKEMON);
     AppendToStartMenuItems(STARTMENU_BAG);
-    AppendToStartMenuItems(STARTMENU_PLAYER);
-    AppendToStartMenuItems(STARTMENU_OPTION);
-    AppendToStartMenuItems(STARTMENU_EXIT);
+    if (FlagGet(FLAG_SYS_QUEST_MENU_GET) == TRUE)
+        AppendToStartMenuItems(STARTMENU_QUESTS);
+    AppendToStartMenuItems(STARTMENU_POKEMON);
+    AppendToStartMenuItems(STARTMENU_POKEDEX);
+    AppendToStartMenuItems(STARTMENU_POKENAV);
 }
 
 static void SetUpStartMenu_Link(void)
@@ -232,7 +290,6 @@ static void SetUpStartMenu_Link(void)
     AppendToStartMenuItems(STARTMENU_BAG);
     AppendToStartMenuItems(STARTMENU_PLAYER2);
     AppendToStartMenuItems(STARTMENU_OPTION);
-    AppendToStartMenuItems(STARTMENU_EXIT);
 }
 
 static void SetUpStartMenu_UnionRoom(void)
@@ -241,7 +298,6 @@ static void SetUpStartMenu_UnionRoom(void)
     AppendToStartMenuItems(STARTMENU_BAG);
     AppendToStartMenuItems(STARTMENU_PLAYER);
     AppendToStartMenuItems(STARTMENU_OPTION);
-    AppendToStartMenuItems(STARTMENU_EXIT);
 }
 
 static void DrawSafariZoneStatsWindow(void)
@@ -318,10 +374,18 @@ static s8 DoDrawStartMenu(void)
             sDrawStartMenuState[0]++;
         break;
     case 5:
+        if (sStartMenuCursorPos == 0)
+            sStartMenuCursorPos++;
         sStartMenuCursorPos = Menu_InitCursor(GetStartMenuWindowId(), 2, 0, 0, 15, sNumStartMenuItems, sStartMenuCursorPos);
-        if (!MenuHelpers_LinkSomething() && InUnionRoom() != TRUE && gSaveBlock2Ptr->optionsButtonMode == OPTIONS_BUTTON_MODE_HELP)
+        if (!MenuHelpers_LinkSomething() && InUnionRoom() != TRUE)
         {
-            DrawHelpMessageWindowWithText(sStartMenuDescPointers[sStartMenuOrder[sStartMenuCursorPos]]);
+            if (gSaveBlock2Ptr->optionsButtonMode == OPTIONS_BUTTON_MODE_LR)
+            {
+                GetStartMenuClock();
+                DrawHelpMessageWindowWithText_season(gStartMenu_Clock);
+            }
+            else if (gSaveBlock2Ptr->optionsButtonMode == OPTIONS_BUTTON_MODE_HELP)
+                DrawHelpMessageWindowWithText(sStartMenuDescPointers[sStartMenuOrder[sStartMenuCursorPos]]);
         }
         CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_MAP);
         return TRUE;
@@ -402,7 +466,7 @@ static bool8 StartCB_HandleInput(void)
     if (JOY_NEW(DPAD_UP))
     {
         PlaySE(SE_SELECT);
-        sStartMenuCursorPos = Menu_MoveCursor(-1);
+        sStartMenuCursorPos = Menu_MoveCursor_SkipFirstEntry(-1);
         if (!MenuHelpers_LinkSomething() && InUnionRoom() != TRUE && gSaveBlock2Ptr->optionsButtonMode == OPTIONS_BUTTON_MODE_HELP)
         {
             PrintTextOnHelpMessageWindow(sStartMenuDescPointers[sStartMenuOrder[sStartMenuCursorPos]], 2);
@@ -411,7 +475,7 @@ static bool8 StartCB_HandleInput(void)
     if (JOY_NEW(DPAD_DOWN))
     {
         PlaySE(SE_SELECT);
-        sStartMenuCursorPos = Menu_MoveCursor(+1);
+        sStartMenuCursorPos = Menu_MoveCursor_SkipFirstEntry(+1);
         if (!MenuHelpers_LinkSomething() && InUnionRoom() != TRUE && gSaveBlock2Ptr->optionsButtonMode == OPTIONS_BUTTON_MODE_HELP)
         {
             PrintTextOnHelpMessageWindow(sStartMenuDescPointers[sStartMenuOrder[sStartMenuCursorPos]], 2);
@@ -433,7 +497,32 @@ static bool8 StartCB_HandleInput(void)
         CloseStartMenu();
         return TRUE;
     }
-    return FALSE;
+    if (JOY_NEW(R_BUTTON) && gSaveBlock1Ptr->rMenu == FALSE)
+    {
+        DestroySafariZoneStatsWindow();
+        //DestroyHelpMessageWindow_();
+        CloseStartMenu();
+
+        gSaveBlock1Ptr->rMenu = TRUE;
+        PlaySE(SE_WIN_OPEN);
+        FieldClearVBlankHBlankCallbacks();
+        ShowStartMenu();
+
+        return TRUE;
+    }
+    if (JOY_NEW(L_BUTTON) && gSaveBlock1Ptr->rMenu == TRUE)
+    {
+        DestroySafariZoneStatsWindow();
+        //DestroyHelpMessageWindow_();
+        CloseStartMenu();
+
+        gSaveBlock1Ptr->rMenu = FALSE;
+        PlaySE(SE_WIN_OPEN);
+        FieldClearVBlankHBlankCallbacks();
+        ShowStartMenu();
+
+        return TRUE;
+    }
 }
 
 static void StartMenu_FadeScreenIfLeavingOverworld(void)
@@ -552,6 +641,20 @@ static bool8 StartMenuLinkPlayerCallback(void)
         PlayRainStoppingSoundEffect();
         CleanupOverworldWindowsAndTilemaps();
         ShowTrainerCardInLink(gLocalLinkPlayerId, CB2_ReturnToFieldWithOpenMenu);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static bool8 StartMenuQuestsCallback(void)
+{
+    if (!gPaletteFade.active)
+    {
+        PlayRainStoppingSoundEffect();
+        DestroySafariZoneStatsWindow();
+        CleanupOverworldWindowsAndTilemaps();
+        SetQuestMenuActive();
+        SetMainCallback2(CB2_QuestMenuFromStartMenu);
         return TRUE;
     }
     return FALSE;
@@ -1002,4 +1105,87 @@ void AppendToList(u8 *list, u8 *cursor, u8 newEntry)
 {
     list[*cursor] = newEntry;
     (*cursor)++;
+}
+
+static void GetStartMenuClock(void)
+{
+    u8 StartMenu_Spring[] = _("Spring - ");
+    u8 StartMenu_NextSummer[] = _(" outdoor steps for Summer.");
+    u8 StartMenu_Summer[] = _("Summer - ");
+    u8 StartMenu_NextAutumn[] = _(" outdoor steps for Autumn.");
+    u8 StartMenu_Autumn[] = _("Autumn - ");
+    u8 StartMenu_NextWinter[] = _(" outdoor steps for Winter.");
+    u8 StartMenu_Winter[] = _("Winter - ");
+    u8 StartMenu_NextSpring[] = _(" outdoor steps for Spring.");
+    u8 StartMenu_Sunday[]    = _("Sunday, ");
+    u8 StartMenu_Monday[]    = _("Monday, ");
+    u8 StartMenu_Tuesday[]   = _("Tuesday, ");
+    u8 StartMenu_Wednesday[] = _("Wednesday, ");
+    u8 StartMenu_Thursday[]  = _("Thursday, ");
+    u8 StartMenu_Friday[]    = _("Friday, ");
+    u8 StartMenu_Saturday[]  = _("Saturday, ");
+    u8 StartMenu_Separator[] = _(":");
+    u8 StartMenu_Zero[] = _("0");
+    u8 StartMenu_NewLine[] = _("\n");
+
+    RtcCalcLocalTime();
+    switch(gLocalTime.dayOfWeek)
+    {
+    case 0:
+        StringCopyN(gStringVar1, StartMenu_Sunday, 12);
+        break;
+    case 1:
+        StringCopyN(gStringVar1, StartMenu_Monday, 12);
+        break;
+    case 2:
+        StringCopyN(gStringVar1, StartMenu_Tuesday, 12);
+        break;
+    case 3:
+        StringCopyN(gStringVar1, StartMenu_Wednesday, 12);
+        break;
+    case 4:
+        StringCopyN(gStringVar1, StartMenu_Thursday, 12);
+        break;
+    case 5:
+        StringCopyN(gStringVar1, StartMenu_Friday, 12);
+        break;
+    case 6:
+        StringCopyN(gStringVar1, StartMenu_Saturday, 12);
+        break;
+    }
+
+    ConvertIntToDecimalStringN(gStringVar2, gLocalTime.hours,   STR_CONV_MODE_LEFT_ALIGN, 2);
+    ConvertIntToDecimalStringN(gStringVar3, gLocalTime.minutes, STR_CONV_MODE_LEFT_ALIGN, 2);
+    StringAppendN(gStringVar1, gStringVar2, 3);
+    StringAppendN(gStringVar1, StartMenu_Separator, 2);
+    if (NumDigits(gLocalTime.minutes) == 1)
+        StringAppendN(gStringVar1, StartMenu_Zero, 2);
+    StringAppendN(gStringVar1, gStringVar3, 3);
+    StringAppendN(gStringVar1, StartMenu_NewLine, 2);
+
+    ConvertIntToDecimalStringN(gStringVar3, VarGet(VAR_STEPS_FOR_NEXT_SEASON), STR_CONV_MODE_LEFT_ALIGN, 5);
+    switch (VarGet(VAR_SEASON))
+    {
+    case 0:
+        StringCopyN(gStringVar2, StartMenu_Spring, 18);
+        StringCopyN(gStringVar4, StartMenu_NextSummer, 27);
+        break;
+    case 1:
+        StringCopyN(gStringVar2, StartMenu_Summer, 18);
+        StringCopyN(gStringVar4, StartMenu_NextAutumn, 27);
+        break;
+    case 2:
+        StringCopyN(gStringVar2, StartMenu_Autumn, 18);
+        StringCopyN(gStringVar4, StartMenu_NextWinter, 27);
+        break;
+    case 3:
+        StringCopyN(gStringVar2, StartMenu_Winter, 18);
+        StringCopyN(gStringVar4, StartMenu_NextSpring, 27);
+        break;
+    }
+
+    StringCopyN(  gStartMenu_Clock, gStringVar2, 10);
+    StringAppendN(gStartMenu_Clock, gStringVar1, 18);
+    StringAppendN(gStartMenu_Clock, gStringVar3, 5);
+    StringAppendN(gStartMenu_Clock, gStringVar4, 27);
 }

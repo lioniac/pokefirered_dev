@@ -586,19 +586,6 @@ static void Task_EvolutionScene(u8 taskId)
     u32 var;
     struct Pokemon* mon = &gPlayerParty[gTasks[taskId].tPartyId];
 
-    // Automatically cancel if the Pokemon would evolve into a species you have not
-    // yet unlocked, such as Crobat.
-    if (!IsNationalPokedexEnabled()
-        && gTasks[taskId].tState == 8
-        && gTasks[taskId].tPostEvoSpecies > SPECIES_MEW)
-    {
-        gTasks[taskId].tState = 17;
-        gTasks[taskId].tEvoWasStopped = TRUE;
-        gTasks[sEvoGraphicsTaskId].EvoGraphicsTaskEvoStop = TRUE;
-        DestroyMovingBackgroundTasks();
-        return;
-    }
-
     // check if B Button was held, so the evolution gets stopped
     if (gMain.heldKeys == B_BUTTON
         && gTasks[taskId].tState == 8
@@ -988,21 +975,6 @@ static void Task_TradeEvolutionScene(u8 taskId)
     u32 var = 0;
     struct Pokemon* mon = &gPlayerParty[gTasks[taskId].tPartyId];
 
-    // Automatically cancel if the Pokemon would evolve into a species you have not
-    // yet unlocked, such as Crobat.
-    if (!IsNationalPokedexEnabled()
-        && gTasks[taskId].tState == 7
-        && gTasks[taskId].tPostEvoSpecies > SPECIES_MEW)
-    {
-        gTasks[taskId].tState = 15;
-        gTasks[taskId].tEvoWasStopped = TRUE;
-        if (gTasks[sEvoGraphicsTaskId].isActive)
-        {
-            gTasks[sEvoGraphicsTaskId].EvoGraphicsTaskEvoStop = TRUE;
-            DestroyMovingBackgroundTasks();
-        }
-    }
-
     switch (gTasks[taskId].tState)
     {
     case 0:
@@ -1089,9 +1061,9 @@ static void Task_TradeEvolutionScene(u8 taskId)
          * BUG: This check causes the evolved Pokemon's cry to play over the sfx.
          * Negate the below condition.
          */
-        if (IsSEPlaying())
+        if (!IsSEPlaying())
         {
-//            Free(sEvoMovingBgPtr);
+            Free(sEvoMovingBgPtr);
             PlayCry1(gTasks[taskId].tPostEvoSpecies, 0);
             memcpy(&gPlttBufferUnfaded[0x20], sEvoStructPtr->savedPalette, 0x60);
             gTasks[taskId].tState++;

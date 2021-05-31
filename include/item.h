@@ -31,11 +31,11 @@ struct BagPocket
 
 extern struct BagPocket gBagPockets[];
 
-void GetBerryCountString(u8* dst, const u8* berryName, u32 quantity);
+u16 GetBagItemQuantity(u16 *quantity);
 void CopyItemName(u16 itemId, u8 *string);
-void CopyItemNameHandlePlural(u16 itemId, u8 *string, u32 quantity);
 bool8 IsBagPocketNonEmpty(u8 pocket);
 bool8 CheckBagHasItem(u16 itemId, u16 count);
+bool8 CheckBagHasTM(u16 itemId);
 bool8 CheckBagHasSpace(u16 itemId, u16 count);
 bool8 RemoveBagItem(u16 itemId, u16 count);
 u8 GetPocketByItemId(u16 itemId);
@@ -79,6 +79,8 @@ void RemovePCItem(u16 itemId, u16 quantity);
 void SortAndCompactBagPocket(struct BagPocket * pocket);
 u8 CountItemsInPC(void);
 void ApplyNewEncryptionKeyToBagItems_(u32 newKey);
-bool8 HasAtLeastOneBerry(void);
+bool8 CheckHasAtLeastOneBerry(void);
+
+void ItemId_GetHoldEffectParam_Script();
 
 #endif // GUARD_ITEM_H

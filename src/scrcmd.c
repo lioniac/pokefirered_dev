@@ -33,6 +33,11 @@
 #include "field_effect.h"
 #include "fieldmap.h"
 #include "field_door.h"
+#include "follow_me.h"
+#include "item_pc.h"
+#include "quest_menu.h"
+#include "clock.h"
+#include "rtc.h"
 #include "constants/event_objects.h"
 
 extern u16 (*const gSpecials[])(void);
@@ -658,28 +663,31 @@ bool8 ScrCmd_delay(struct ScriptContext * ctx)
 
 bool8 ScrCmd_initclock(struct ScriptContext * ctx)
 {
-//    u8 hour = VarGet(ScriptReadHalfword(ctx));
-//    u8 minute = VarGet(ScriptReadHalfword(ctx));
-//
-//    RtcInitLocalTimeOffset(hour, minute);
+    u8 hour = VarGet(ScriptReadHalfword(ctx));
+    u8 minute = VarGet(ScriptReadHalfword(ctx));
+
+    RtcInitLocalTimeOffset(hour, minute);
     return FALSE;
 }
 
 bool8 ScrCmd_dodailyevents(struct ScriptContext * ctx)
 {
-//    DoTimeBasedEvents();
+    DoTimeBasedEvents();
     return FALSE;
 }
 
 bool8 ScrCmd_gettime(struct ScriptContext * ctx)
 {
-//    RtcCalcLocalTime();
-//    gSpecialVar_0x8000 = gLocalTime.hours;
-//    gSpecialVar_0x8001 = gLocalTime.minutes;
-//    gSpecialVar_0x8002 = gLocalTime.seconds;
-    gSpecialVar_0x8000 = 0;
-    gSpecialVar_0x8001 = 0;
-    gSpecialVar_0x8002 = 0;
+    RtcCalcLocalTime();
+    gSpecialVar_0x8000 = gLocalTime.hours;
+    gSpecialVar_0x8001 = gLocalTime.minutes;
+    gSpecialVar_0x8002 = gLocalTime.seconds;
+    gSpecialVar_0x8003 = gLocalTime.dayOfWeek;
+
+    // gSpecialVar_0x8000 = 0;
+    // gSpecialVar_0x8001 = 0;
+    // gSpecialVar_0x8002 = 0;
+    // gSpecialVar_0x8003 = 0;
     return FALSE;
 }
 
@@ -1744,11 +1752,11 @@ bool8 ScrCmd_givemon(struct ScriptContext * ctx)
     u16 species = VarGet(ScriptReadHalfword(ctx));
     u8 level = ScriptReadByte(ctx);
     u16 item = VarGet(ScriptReadHalfword(ctx));
-    u32 unkParam1 = ScriptReadWord(ctx);
-    u32 unkParam2 = ScriptReadWord(ctx);
-    u8 unkParam3 = ScriptReadByte(ctx);
+    u32 nature = ScriptReadWord(ctx);
+    u32 pokeball = ScriptReadWord(ctx);
+    u8 fixedIv = ScriptReadByte(ctx);
 
-    gSpecialVar_Result = ScriptGiveMon(species, level, item, unkParam1, unkParam2, unkParam3);
+    gSpecialVar_Result = ScriptGiveMon(species, level, item, nature, pokeball, fixedIv);
     return FALSE;
 }
 
@@ -1963,11 +1971,11 @@ bool8 ScrCmd_pokemartdecoration(struct ScriptContext * ctx)
     return TRUE;
 }
 
-bool8 ScrCmd_pokemartdecoration2(struct ScriptContext * ctx)
+bool8 ScrCmd_badgemart(struct ScriptContext * ctx)
 {
     const void *ptr = (void *)ScriptReadWord(ctx);
 
-    CreateDecorationShop2Menu(ptr);
+    CreatePokemartMenu(NULL);
     ScriptContext1_Stop();
     return TRUE;
 }
@@ -2255,5 +2263,70 @@ bool8 ScrCmd_setmonmetlocation(struct ScriptContext * ctx)
 
     if (partyIndex < PARTY_SIZE)
         SetMonData(&gPlayerParty[partyIndex], MON_DATA_MET_LOCATION, &location);
+    return FALSE;
+}
+
+bool8 ScrCmd_questmenu(struct ScriptContext *ctx)
+{
+    u8 caseId = ScriptReadByte(ctx);
+    u8 questId = VarGet(ScriptReadByte(ctx));
+
+    switch (caseId)
+    {
+    case QUEST_MENU_OPEN:
+    default:
+        SetQuestMenuActive();
+        BeginNormalPaletteFade(0xFFFFFFFF, 2, 16, 0, 0);
+        ItemPc_Init(0, CB2_ReturnToFieldContinueScriptPlayMapMusic);
+        ScriptContext1_Stop();
+        break;
+    case QUEST_MENU_UNLOCK_QUEST:
+        GetSetQuestFlag(questId, FLAG_SET_UNLOCKED);
+        break;
+    case QUEST_MENU_COMPLETE_QUEST:
+        GetSetQuestFlag(questId, FLAG_SET_COMPLETED);
+        break;
+    case QUEST_MENU_BUFFER_QUEST_NAME:
+        CopyQuestName(gStringVar1, questId);
+        break;
+    case QUEST_MENU_CHECK_UNLOCKED:
+        if (GetSetQuestFlag(questId, FLAG_GET_UNLOCKED))
+            gSpecialVar_Result = TRUE;
+        else
+            gSpecialVar_Result = FALSE;
+        break;
+    case QUEST_MENU_CHECK_COMPLETE:
+        if (GetSetQuestFlag(questId, FLAG_GET_COMPLETED))
+            gSpecialVar_Result = TRUE;
+        else
+            gSpecialVar_Result = FALSE;
+        break;
+    }
+
+    return TRUE;
+}
+
+bool8 ScrCmd_handlefollower(struct ScriptContext *ctx)
+{
+    u8 caseId = ScriptReadByte(ctx);
+    u8 localId = ScriptReadByte(ctx);
+    u16 flags = ScriptReadHalfword(ctx);
+
+    switch (caseId)
+    {
+    case FLAG_SET_FOLLOWER:
+        SetUpFollowerSprite(localId, flags);
+        break;
+    case FLAG_REMOVE_FOLLOWER:
+        DestroyFollower();
+        break;
+    case FLAG_FACE_FOLLOWER:
+        PlayerFaceFollowerSprite();
+        break;
+    case FLAG_CHECK_FOLLOWER:
+        CheckPlayerHasFollower();
+        break;
+    }
+
     return FALSE;
 }

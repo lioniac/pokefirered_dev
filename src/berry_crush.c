@@ -2262,7 +2262,7 @@ static u32 Cmd_AskPlayAgain(struct BerryCrushGame * game, u8 *args)
             memset(game->sendCmd, 0, sizeof(game->sendCmd));
             if (input == 0)
             {
-                if (HasAtLeastOneBerry())
+                if (CheckHasAtLeastOneBerry())
                     game->playAgainState = PLAY_AGAIN_YES;
                 else
                     game->playAgainState = PLAY_AGAIN_NO_BERRIES;

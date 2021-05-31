@@ -29,6 +29,7 @@
 #include "berry_powder.h"
 #include "pokemon_jump.h"
 #include "event_scripts.h"
+#include "rtc.h"
 
 // this file's functions
 static void ResetMiniGamesResults(void);
@@ -59,13 +60,13 @@ static void InitPlayerTrainerId(void)
 
 static void SetDefaultOptions(void)
 {
-    gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_MID;
-    gSaveBlock2Ptr->optionsWindowFrameType = 0;
-    gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_MONO;
-    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SHIFT;
-    gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
+    gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_FAST;
+    gSaveBlock2Ptr->optionsWindowFrameType = 3;
+    gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_STEREO;
+    gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SET;
+    gSaveBlock2Ptr->optionsBattleSceneOff = TRUE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
-    gSaveBlock2Ptr->optionsButtonMode = OPTIONS_BUTTON_MODE_HELP;
+    gSaveBlock2Ptr->optionsButtonMode = OPTIONS_BUTTON_MODE_LR;
 }
 
 static void ClearPokedexFlags(void)
@@ -108,6 +109,7 @@ void NewGameInitData(void)
 {
     u8 rivalName[PLAYER_NAME_LENGTH + 1];
 
+    RtcReset();
     StringCopy(rivalName, gSaveBlock1Ptr->rivalName);
     gDifferentSaveFile = TRUE;
     gSaveBlock2Ptr->encryptionKey = 0;
@@ -135,7 +137,6 @@ void NewGameInitData(void)
     ZeroPlayerPartyMons();
     ResetPokemonStorageSystem();
     ClearRoamerData();
-    gSaveBlock1Ptr->registeredItem = 0;
     ClearBag();
     NewGameInitPCItems();
     ClearEnigmaBerries();
@@ -149,6 +150,29 @@ void NewGameInitData(void)
     ScriptContext2_RunNewScript(EventScript_ResetAllMapFlags);
     StringCopy(gSaveBlock1Ptr->rivalName, rivalName);
     ResetTrainerTowerResults();
+
+    //AutoRun    
+    gSaveBlock2Ptr->autoRun = TRUE;
+    
+    //Register LR
+    gSaveBlock1Ptr->registeredItemSelect = 0;
+    gSaveBlock1Ptr->registeredItemL = 0;
+    gSaveBlock1Ptr->registeredItemR = 0;
+
+    //FollowMe
+    memset(&gSaveBlock1Ptr->follower, 0, sizeof(gSaveBlock1Ptr->follower));
+    
+    //Seasons Random Weather
+    gSaveBlock1Ptr->seasonPedometer = 0;
+    gSaveBlock1Ptr->season = 0;
+    VarSet(VAR_SEASON, 0);
+    VarSet(VAR_STEPS_FOR_NEXT_SEASON, STEPS_FOR_SEASON_CHANGE);
+
+    //Gen6 Exp. Share
+    gSaveBlock2Ptr->expShare = 0;
+
+    // Extended StartMenu
+    gSaveBlock1Ptr->rMenu = FALSE;
 }
 
 static void ResetMiniGamesResults(void)

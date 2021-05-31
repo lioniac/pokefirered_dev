@@ -8,6 +8,7 @@
 #include "constants/flags.h"
 #include "constants/vars.h"
 #include "constants/species.h"
+#include "mgba.h"
 
 // Prevent cross-jump optimization.
 #define BLOCK_CROSS_JUMP asm("");
@@ -153,6 +154,7 @@ struct Time
     /*0x02*/ s8 hours;
     /*0x03*/ s8 minutes;
     /*0x04*/ s8 seconds;
+    /*0x05*/ s8 dayOfWeek;
 };
 
 struct Pokedex
@@ -277,6 +279,31 @@ struct BattleTowerData // Leftover from R/S
     /*0x04D1, 0x0581*/ u8 filler_4D1[0x317];
 }; /* size = 0x7E8 */
 
+// follow me
+struct FollowerMapData
+{
+    /*0x0*/ u8 id;
+    /*0x1*/ u8 number;
+    /*0x2*/ u8 group;
+}; /* size = 0x4 */
+struct Follower
+{
+    /*0x00*/ u8 inProgress:1;
+             u8 warpEnd:1;
+             u8 createSurfBlob:3;
+             u8 comeOutDoorStairs:3;
+    /*0x01*/ u8 objId;
+    /*0x02*/ u8 currentSprite;
+    /*0x03*/ u8 delayedState;
+    /*0x04*/ struct FollowerMapData map;
+    /*0x08*/ struct Coords16 log;
+    /*0x0C*/ const u8* script;
+    /*0x10*/ u16 flag;
+    /*0x12*/ u16 graphicsId;
+    /*0x14*/ u16 flags;
+    /*0x15*/ u8 locked;
+}; /* size = 0x18 */
+
 struct SaveBlock2
 {
     /*0x000*/ u8 playerName[PLAYER_NAME_LENGTH + 1];
@@ -294,6 +321,7 @@ struct SaveBlock2
               u16 optionsBattleStyle:1; // OPTIONS_BATTLE_STYLE_[SHIFT/SET]
               u16 optionsBattleSceneOff:1; // whether battle animations are disabled
               u16 regionMapZoom:1; // whether the map is zoomed in
+              u16 expShare:1;
     /*0x018*/ struct Pokedex pokedex;
     /*0x090*/ u8 filler_90[0x8];
     /*0x098*/ struct Time localTimeOffset;
@@ -309,7 +337,9 @@ struct SaveBlock2
     /*0xB10*/ struct BerryPickingResults berryPick;
     /*0xB20*/ u8 filler_B20[0x400];
     /*0xF20*/ u32 encryptionKey;
-}; // size: 0xF24
+
+    /*0xF24*/ bool8 autoRun;
+}; // size: 0xF25
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
 
@@ -779,6 +809,10 @@ struct ExternalEventFlags
 
 #define UNION_ROOM_KB_ROW_COUNT 10
 
+// quest menu
+#include "constants/quests.h"
+#define SIDE_QUEST_FLAGS_COUNT     ((SIDE_QUEST_COUNT / 8) + ((SIDE_QUEST_COUNT % 8) ? 1 : 0))
+
 struct SaveBlock1
 {
     /*0x0000*/ struct Coords16 pos;
@@ -796,7 +830,7 @@ struct SaveBlock1
     /*0x0038*/ struct Pokemon playerParty[PARTY_SIZE];
     /*0x0290*/ u32 money;
     /*0x0294*/ u16 coins;
-    /*0x0296*/ u16 registeredItem; // registered for use with SELECT button
+    /*0x0296*/ u16 registeredItemSelect;
     /*0x0298*/ struct ItemSlot pcItems[PC_ITEMS_COUNT];
     /*0x0310*/ struct ItemSlot bagPocket_Items[BAG_ITEMS_COUNT];
     /*0x03b8*/ struct ItemSlot bagPocket_KeyItems[BAG_KEYITEMS_COUNT];
@@ -813,7 +847,6 @@ struct SaveBlock1
     /*0x0EE0*/ u8 flags[NUM_FLAG_BYTES];
     /*0x1000*/ u16 vars[VARS_COUNT];
     /*0x1200*/ u32 gameStats[NUM_GAME_STATS];
-    /*0x1300*/ struct QuestLog questLog[QUEST_LOG_SCENE_COUNT];
     /*0x2CA0*/ u16 easyChatProfile[6];
     /*0x2CAC*/ u16 easyChatBattleStart[6];
     /*0x2CB8*/ u16 easyChatBattleWon[6];
@@ -842,7 +875,15 @@ struct SaveBlock1
     /*0x3D24*/ u8 filler3D24[0x10];
     /*0x3D34*/ u32 towerChallengeId;
     /*0x3D38*/ struct TrainerTower trainerTower[NUM_TOWER_CHALLENGE_TYPES];
-}; // size: 0x3D68
+    /*0x????*/ u16 registeredItemR;
+    /*0x????*/ u16 registeredItemL;
+    /*0x????*/ struct Follower follower;
+    /*0x????*/ u8 unlockedQuests[SIDE_QUEST_FLAGS_COUNT];
+    /*0x????*/ u8 completedQuests[SIDE_QUEST_FLAGS_COUNT];
+    /*0x????*/ u16 seasonPedometer;
+    /*0x????*/ u8 season;
+    /*0x????*/ bool8 rMenu;
+}; // size: 0x????
 
 struct MapPosition
 {
@@ -853,5 +894,7 @@ struct MapPosition
 
 extern struct SaveBlock1* gSaveBlock1Ptr;
 extern u8 gReservedSpritePaletteCount;
+
+#define STEPS_FOR_SEASON_CHANGE 5000
 
 #endif // GUARD_GLOBAL_H

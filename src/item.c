@@ -13,6 +13,8 @@
 
 EWRAM_DATA struct BagPocket gBagPockets[NUM_BAG_POCKETS] = {};
 
+void ItemId_GetHoldEffectParam_Script();
+
 void SortAndCompactBagPocket(struct BagPocket * pocket);
 
 // Item descriptions and data
@@ -139,7 +141,25 @@ bool8 CheckBagHasItem(u16 itemId, u16 count)
     return FALSE;
 }
 
-bool8 HasAtLeastOneBerry(void)
+bool8 CheckBagHasTM(u16 itemId)
+{
+    u8 i;
+    u8 pocket;
+
+    if (ItemId_GetPocket(itemId) != 4)
+        return FALSE;
+
+    pocket = 3;
+    // Check for item slots that contain the item
+    for (i = 0; i < gBagPockets[pocket].capacity; i++)
+    {
+        if (gBagPockets[pocket].itemSlots[i].itemId == itemId)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+bool8 CheckHasAtLeastOneBerry(void)
 {
     u8 itemId;
     bool8 exists;
@@ -457,13 +477,33 @@ void ItemPcCompaction(void)
 
 void RegisteredItemHandleBikeSwap(void)
 {
-    switch (gSaveBlock1Ptr->registeredItem)
+    switch (gSaveBlock1Ptr->registeredItemSelect)
     {
     case ITEM_MACH_BIKE:
-        gSaveBlock1Ptr->registeredItem = ITEM_ACRO_BIKE;
+        gSaveBlock1Ptr->registeredItemSelect = ITEM_ACRO_BIKE;
         break;
     case ITEM_ACRO_BIKE:
-        gSaveBlock1Ptr->registeredItem = ITEM_MACH_BIKE;
+        gSaveBlock1Ptr->registeredItemSelect = ITEM_MACH_BIKE;
+        break;
+    }
+
+    switch (gSaveBlock1Ptr->registeredItemL)
+    {
+    case ITEM_MACH_BIKE:
+        gSaveBlock1Ptr->registeredItemL = ITEM_ACRO_BIKE;
+        break;
+    case ITEM_ACRO_BIKE:
+        gSaveBlock1Ptr->registeredItemL = ITEM_MACH_BIKE;
+        break;
+    }
+
+    switch (gSaveBlock1Ptr->registeredItemR)
+    {
+    case ITEM_MACH_BIKE:
+        gSaveBlock1Ptr->registeredItemR = ITEM_ACRO_BIKE;
+        break;
+    case ITEM_ACRO_BIKE:
+        gSaveBlock1Ptr->registeredItemR = ITEM_MACH_BIKE;
         break;
     }
 }
@@ -684,4 +724,9 @@ ItemUseFunc ItemId_GetBattleFunc(u16 itemId)
 u8 ItemId_GetSecondaryId(u16 itemId)
 {
     return gItems[SanitizeItemId(itemId)].secondaryId;
+}
+
+void ItemId_GetHoldEffectParam_Script()
+{
+    VarSet(VAR_RESULT, ItemId_GetHoldEffectParam(VarGet(VAR_0x8004)));
 }

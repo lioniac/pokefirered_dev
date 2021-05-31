@@ -54,6 +54,7 @@ static void DrawLevelUpWindow2(void);
 static bool8 sub_8026648(void);
 static void PutMonIconOnLvlUpBox(void);
 static void PutLevelAndGenderOnLvlUpBox(void);
+static bool8 CriticalCapture(u32 odds);
 
 static void SpriteCB_MonIconOnLvlUpBox(struct Sprite *sprite);
 
@@ -814,31 +815,46 @@ static const u16 sWeightToDamageTable[] =
     0xFFFF, 0xFFFF
 };
 
-struct PickupItem
+static const u16 sPickupItems[] =
 {
-    u16 itemId;
-    u8 chance;
+    ITEM_POTION,
+    ITEM_ANTIDOTE,
+    ITEM_SUPER_POTION,
+    ITEM_GREAT_BALL,
+    ITEM_REPEL,
+    ITEM_ESCAPE_ROPE,
+    ITEM_X_ATTACK,
+    ITEM_FULL_HEAL,
+    ITEM_ULTRA_BALL,
+    ITEM_HYPER_POTION,
+    ITEM_RARE_CANDY,
+    ITEM_PROTEIN,
+    ITEM_REVIVE,
+    ITEM_HP_UP,
+    ITEM_FULL_RESTORE,
+    ITEM_MAX_REVIVE,
+    ITEM_PP_UP,
+    ITEM_MAX_ELIXIR,
 };
 
-static const struct PickupItem sPickupItems[] =
+static const u16 sRarePickupItems[] =
 {
-    { ITEM_ORAN_BERRY, 15 },
-    { ITEM_CHERI_BERRY, 25 },
-    { ITEM_CHESTO_BERRY, 35 },
-    { ITEM_PECHA_BERRY, 45 },
-    { ITEM_RAWST_BERRY, 55 },
-    { ITEM_ASPEAR_BERRY, 65 },
-    { ITEM_PERSIM_BERRY, 75 },
-    { ITEM_TM10, 80 },
-    { ITEM_PP_UP, 85 },
-    { ITEM_RARE_CANDY, 90 },
-    { ITEM_NUGGET, 95 },
-    { ITEM_SPELON_BERRY, 96 },
-    { ITEM_PAMTRE_BERRY, 97 },
-    { ITEM_WATMEL_BERRY, 98 },
-    { ITEM_DURIN_BERRY, 99 },
-    { ITEM_BELUE_BERRY, 1 },
+    ITEM_HYPER_POTION,
+    ITEM_NUGGET,
+    ITEM_KINGS_ROCK,
+    ITEM_FULL_RESTORE,
+    ITEM_ETHER,
+    ITEM_WHITE_HERB,
+    ITEM_TM44_REST,
+    ITEM_ELIXIR,
+    ITEM_TM01_FOCUS_PUNCH,
+    ITEM_LEFTOVERS,
+    ITEM_TM26_EARTHQUAKE,
+};
 
+static const u8 sPickupProbabilities[] =
+{
+    30, 40, 50, 60, 70, 80, 90, 94, 98
 };
 
 static const u8 sTerrainToType[] =
@@ -1099,7 +1115,7 @@ static void atk01_accuracycheck(void)
             calc = (calc * 130) / 100; // 1.3 compound eyes boost
         if (WEATHER_HAS_EFFECT && gBattleMons[gBattlerTarget].ability == ABILITY_SAND_VEIL && gBattleWeather & WEATHER_SANDSTORM_ANY)
             calc = (calc * 80) / 100; // 1.2 sand veil loss
-        if (gBattleMons[gBattlerAttacker].ability == ABILITY_HUSTLE && IS_TYPE_PHYSICAL(type))
+        if (gBattleMons[gBattlerAttacker].ability == ABILITY_HUSTLE && IS_TYPE_PHYSICAL(gBattleMoves[move]))
             calc = (calc * 80) / 100; // 1.2 hustle loss
         if (gBattleMons[gBattlerTarget].item == ITEM_ENIGMA_BERRY)
         {
@@ -1205,6 +1221,7 @@ static void atk04_critcalc(void)
                 + (gBattleMoves[gCurrentMove].effect == EFFECT_SKY_ATTACK)
                 + (gBattleMoves[gCurrentMove].effect == EFFECT_BLAZE_KICK)
                 + (gBattleMoves[gCurrentMove].effect == EFFECT_POISON_TAIL)
+                + (gBattleMoves[gCurrentMove].effect == EFFECT_RAZOR_WIND)
                 + (holdEffect == HOLD_EFFECT_SCOPE_LENS)
                 + 2 * (holdEffect == HOLD_EFFECT_LUCKY_PUNCH && gBattleMons[gBattlerAttacker].species == SPECIES_CHANSEY)
                 + 2 * (holdEffect == HOLD_EFFECT_STICK && gBattleMons[gBattlerAttacker].species == SPECIES_FARFETCHD);
@@ -1813,7 +1830,7 @@ static void atk0C_datahpupdate(void)
                     }
                     if (!gSpecialStatuses[gActiveBattler].dmg && !(gHitMarker & HITMARKER_x100000))
                         gSpecialStatuses[gActiveBattler].dmg = gHpDealt;
-                    if (IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_x100000) && gCurrentMove != MOVE_PAIN_SPLIT)
+                    if (IS_TYPE_PHYSICAL(gBattleMoves[gCurrentMove]) && !(gHitMarker & HITMARKER_x100000) && gCurrentMove != MOVE_PAIN_SPLIT)
                     {
                         gProtectStructs[gActiveBattler].physicalDmg = gHpDealt;
                         gSpecialStatuses[gActiveBattler].physicalDmg = gHpDealt;
@@ -1828,7 +1845,7 @@ static void atk0C_datahpupdate(void)
                             gSpecialStatuses[gActiveBattler].physicalBattlerId = gBattlerTarget;
                         }
                     }
-                    else if (!IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_x100000))
+                    else if (IS_TYPE_PHYSICAL(gBattleMoves[gCurrentMove]) && !(gHitMarker & HITMARKER_x100000))
                     {
                         gProtectStructs[gActiveBattler].specialDmg = gHpDealt;
                         gSpecialStatuses[gActiveBattler].specialDmg = gHpDealt;
@@ -3101,17 +3118,17 @@ static void atk23_getexp(void)
                         holdEffect = gSaveBlock1Ptr->enigmaBerry.holdEffect;
                     else
                         holdEffect = ItemId_GetHoldEffect(item);
-                    if (holdEffect == HOLD_EFFECT_EXP_SHARE)
-                        ++viaExpShare;
                 }
             }
             calculatedExp = gBaseStats[gBattleMons[gBattlerFainted].species].expYield * gBattleMons[gBattlerFainted].level / 7;
-            if (viaExpShare) // at least one mon is getting exp via exp share
+            if (gSaveBlock2Ptr->expShare) // exp share is turned on
             {
                 *exp = calculatedExp / 2 / viaSentIn;
                 if (*exp == 0)
                     *exp = 1;
-                gExpShareExp = calculatedExp / 2 / viaExpShare;
+
+                viaExpShare = gSaveBlock1Ptr->playerPartyCount;
+                gExpShareExp = calculatedExp / 2;
                 if (gExpShareExp == 0)
                     gExpShareExp = 1;
             }
@@ -3135,7 +3152,7 @@ static void atk23_getexp(void)
                 holdEffect = gSaveBlock1Ptr->enigmaBerry.holdEffect;
             else
                 holdEffect = ItemId_GetHoldEffect(item);
-            if (holdEffect != HOLD_EFFECT_EXP_SHARE && !(gBattleStruct->sentInPokes & 1))
+            if (!gSaveBlock2Ptr->expShare && !(gBattleStruct->sentInPokes & 1))
             {
                 *(&gBattleStruct->sentInPokes) >>= 1;
                 gBattleScripting.atk23_state = 5;
@@ -3155,16 +3172,17 @@ static void atk23_getexp(void)
                  && !gBattleStruct->wildVictorySong)
                 {
                     BattleStopLowHpSound();
-                    PlayBGM(MUS_VICTORY_WILD);
+                    //PlayBGM(MUS_VICTORY_WILD);
                     ++gBattleStruct->wildVictorySong;
                 }
-                if (GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_HP))
+                if (GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_HP)
+                 && !GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_IS_EGG))
                 {
                     if (gBattleStruct->sentInPokes & 1)
                         gBattleMoveDamage = *exp;
                     else
                         gBattleMoveDamage = 0;
-                    if (holdEffect == HOLD_EFFECT_EXP_SHARE)
+                    if (gSaveBlock2Ptr->expShare)
                         gBattleMoveDamage += gExpShareExp;
                     if (holdEffect == HOLD_EFFECT_LUCKY_EGG)
                         gBattleMoveDamage = (gBattleMoveDamage * 150) / 100;
@@ -5160,8 +5178,6 @@ static void atk5D_getmoneyreward(void)
     u32 moneyReward;
     u8 lastMonLevel = 0;
 
-    const struct TrainerMonItemCustomMoves *party4; //This needs to be out here
-
     if (gBattleOutcome == B_OUTCOME_WON)
     {
         if (gTrainerBattleOpponent_A == TRAINER_SECRET_BASE)
@@ -5170,43 +5186,8 @@ static void atk5D_getmoneyreward(void)
         }
         else
         {
-            switch (gTrainers[gTrainerBattleOpponent_A].partyFlags)
-            {
-            case 0:
-                {
-                    const struct TrainerMonNoItemDefaultMoves *party1 = gTrainers[gTrainerBattleOpponent_A].party.NoItemDefaultMoves;
-                    
-                    lastMonLevel = party1[gTrainers[gTrainerBattleOpponent_A].partySize - 1].lvl;
-                }
-                break;
-            case F_TRAINER_PARTY_CUSTOM_MOVESET:
-                {
-                    const struct TrainerMonNoItemCustomMoves *party2 = gTrainers[gTrainerBattleOpponent_A].party.NoItemCustomMoves;
-                    
-                    lastMonLevel = party2[gTrainers[gTrainerBattleOpponent_A].partySize - 1].lvl;
-                }
-                break;
-            case F_TRAINER_PARTY_HELD_ITEM:
-                {
-                    const struct TrainerMonItemDefaultMoves *party3 = gTrainers[gTrainerBattleOpponent_A].party.ItemDefaultMoves;
-                    
-                    lastMonLevel = party3[gTrainers[gTrainerBattleOpponent_A].partySize - 1].lvl;
-                }
-                break;
-            case (F_TRAINER_PARTY_CUSTOM_MOVESET | F_TRAINER_PARTY_HELD_ITEM):
-                {
-                    party4 = gTrainers[gTrainerBattleOpponent_A].party.ItemCustomMoves;
-                    
-                    lastMonLevel = party4[gTrainers[gTrainerBattleOpponent_A].partySize - 1].lvl;
-                }
-                break;
-            }
-            for (; gTrainerMoneyTable[i].classId != 0xFF; i++)
-            {
-                if (gTrainerMoneyTable[i].classId == gTrainers[gTrainerBattleOpponent_A].trainerClass)
-                    break;
-            }
-            party4 = gTrainers[gTrainerBattleOpponent_A].party.ItemCustomMoves; // Needed to Match. Has no effect.
+            const struct TrainerMon *party = gTrainers[gTrainerBattleOpponent_A].party.TrainerMon;
+            lastMonLevel = party[gTrainers[gTrainerBattleOpponent_A].partySize - 1].lvl;
             moneyReward = 4 * lastMonLevel * gBattleStruct->moneyMultiplier * (gBattleTypeFlags & BATTLE_TYPE_DOUBLE ? 2 : 1) * gTrainerMoneyTable[i].value;
         }
         AddMoney(&gSaveBlock1Ptr->money, moneyReward);
@@ -8098,21 +8079,15 @@ static void atkC0_recoverbasedonsunlight(void)
 
 static void atkC1_hiddenpowercalc(void)
 {
-    s32 powerBits, typeBits;
+    s32 typeBits;
 
-    powerBits = ((gBattleMons[gBattlerAttacker].hpIV & 2) >> 1)
-              | ((gBattleMons[gBattlerAttacker].attackIV & 2) << 0)
-              | ((gBattleMons[gBattlerAttacker].defenseIV & 2) << 1)
-              | ((gBattleMons[gBattlerAttacker].speedIV & 2) << 2)
-              | ((gBattleMons[gBattlerAttacker].spAttackIV & 2) << 3)
-              | ((gBattleMons[gBattlerAttacker].spDefenseIV & 2) << 4);
     typeBits  = ((gBattleMons[gBattlerAttacker].hpIV & 1) << 0)
               | ((gBattleMons[gBattlerAttacker].attackIV & 1) << 1)
               | ((gBattleMons[gBattlerAttacker].defenseIV & 1) << 2)
               | ((gBattleMons[gBattlerAttacker].speedIV & 1) << 3)
               | ((gBattleMons[gBattlerAttacker].spAttackIV & 1) << 4)
               | ((gBattleMons[gBattlerAttacker].spDefenseIV & 1) << 5);
-    gDynamicBasePower = (40 * powerBits) / 63 + 30;
+    gDynamicBasePower = 60;
     gBattleStruct->dynamicMoveType = (15 * typeBits) / 63 + 1;
     if (gBattleStruct->dynamicMoveType >= TYPE_MYSTERY)
         ++gBattleStruct->dynamicMoveType;
@@ -8798,29 +8773,48 @@ static void atkE4_getsecretpowereffect(void)
 static void atkE5_pickup(void)
 {
     s32 i;
-    u32 j;
     u16 species, heldItem;
-    u32 ability;
+    u8 ability;
 
-    for (i = 0; i < PARTY_SIZE; ++i)
+    for (i = 0; i < PARTY_SIZE; i++)
     {
         species = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES2);
         heldItem = GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM);
-        if (GetMonData(&gPlayerParty[i], MON_DATA_ABILITY_NUM) != ABILITY_NONE)
+
+        if (GetMonData(&gPlayerParty[i], MON_DATA_ABILITY_NUM))
             ability = gBaseStats[species].abilities[1];
         else
             ability = gBaseStats[species].abilities[0];
-        if (ability == ABILITY_PICKUP && species != SPECIES_NONE && species != SPECIES_EGG && heldItem == ITEM_NONE && !(Random() % 10))
-        {
-            s32 random = Random() % 100;
 
-            for (j = 0; j < 15; ++j)
-                if (sPickupItems[j].chance > random)
+        if (ability == ABILITY_PICKUP
+            && species != 0
+            && species != SPECIES_EGG
+            && heldItem == ITEM_NONE
+            && (Random() % 10) == 0)
+        {
+            s32 j;
+            s32 rand = Random() % 100;
+            u8 lvlDivBy10 = (GetMonData(&gPlayerParty[i], MON_DATA_LEVEL) - 1) / 10;
+            if (lvlDivBy10 > 9)
+                lvlDivBy10 = 9;
+
+            for (j = 0; j < 9; j++)
+            {
+                if (sPickupProbabilities[j] > rand)
+                {
+                    SetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM, &sPickupItems[lvlDivBy10 + j]);
                     break;
-            SetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM, &sPickupItems[j]);
+                }
+                else if (rand == 99 || rand == 98)
+                {
+                    SetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM, &sRarePickupItems[lvlDivBy10 + (99 - rand)]);
+                    break;
+                }
+            }
         }
     }
-    ++gBattlescriptCurrInstr;
+
+    gBattlescriptCurrInstr++;
 }
 
 static void atkE6_docastformchangeanimation(void)
@@ -9097,17 +9091,34 @@ static void atkEF_handleballthrow(void)
             }
             else // mon may be caught, calculate shakes
             {
-                u8 shakes;
+                u8 shakes, maxShakes;
 
-                odds = Sqrt(Sqrt(16711680 / odds));
-                odds = 1048560 / odds;
-                for (shakes = 0; shakes < 4 && Random() < odds; ++shakes);
+                gBattleSpritesDataPtr->animationData->isCriticalCapture = 0;    //initialize
+                gBattleSpritesDataPtr->animationData->criticalCaptureSuccess = 0;
+                if (CriticalCapture(odds))
+                {
+                    maxShakes = 1;  // critical capture doesn't guarantee capture
+                    gBattleSpritesDataPtr->animationData->isCriticalCapture = 1;
+                }
+                else
+                {
+                    maxShakes = 4;
+                }
                 if (gLastUsedItem == ITEM_MASTER_BALL)
-                    shakes = BALL_3_SHAKES_SUCCESS; // why calculate the shakes before that check?
+                {
+                    shakes = maxShakes;
+                }
+                else
+                {
+                    odds = Sqrt(Sqrt(16711680 / odds));
+                    odds = 1048560 / odds;
+                    for (shakes = 0; shakes < maxShakes && Random() < odds; shakes++);
+                }
                 BtlController_EmitBallThrowAnim(0, shakes);
                 MarkBattlerForControllerExec(gActiveBattler);
-                if (shakes == BALL_3_SHAKES_SUCCESS) // mon caught, copy of the code above
+                if (shakes == maxShakes) // mon caught, copy of the code above
                 {
+                    gBattleSpritesDataPtr->animationData->criticalCaptureSuccess = 1;
                     gBattlescriptCurrInstr = BattleScript_SuccessBallThrow;
                     SetMonData(&gEnemyParty[gBattlerPartyIndexes[gBattlerTarget]], MON_DATA_POKEBALL, &gLastUsedItem);
                     if (CalculatePlayerPartyCount() == 6)
@@ -9117,7 +9128,10 @@ static void atkEF_handleballthrow(void)
                 }
                 else // not caught
                 {
-                    gBattleCommunication[MULTISTRING_CHOOSER] = shakes;
+                    if (IsCriticalCapture())
+                        gBattleCommunication[MULTISTRING_CHOOSER] = shakes + 3;
+                    else
+                        gBattleCommunication[MULTISTRING_CHOOSER] = shakes;
                     gBattlescriptCurrInstr = BattleScript_ShakeBallThrow;
                 }
             }
@@ -9387,4 +9401,28 @@ static void atkF7_finishturn(void)
 {
     gCurrentActionFuncId = B_ACTION_FINISHED;
     gCurrentTurnActionNumber = gBattlersCount;
+}
+
+static bool8 CriticalCapture(u32 odds)
+{
+	u16 numCaught = GetNationalPokedexCount(FLAG_GET_CAUGHT);
+
+    if (numCaught <= 30)
+		odds = 0;
+	else if (numCaught <= 150)
+		odds /= 2;
+	else if (numCaught <= 300)
+		;
+	else if (numCaught <= 450)
+		odds = (odds * 150) / 100;
+	else if (numCaught <= 600)
+		odds *= 2;
+	else
+		odds = (odds * 250) / 100;
+
+    odds /= 6;
+    if ((Random() % 255) < odds)
+		return TRUE;
+
+    return FALSE;
 }

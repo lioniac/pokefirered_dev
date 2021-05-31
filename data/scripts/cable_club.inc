@@ -977,7 +977,7 @@ CableClub_EventScript_WirelessBerryCrush:: @ 81BBD35
 	msgbox CableClub_Text_UseBerryCrush, MSGBOX_YESNO
 	compare VAR_RESULT, NO
 	goto_if_eq CableClub_EventScript_AbortLink
-	special HasAtLeastOneBerry
+	special CheckHasAtLeastOneBerry
 	compare VAR_RESULT, FALSE
 	goto_if_eq CableClub_EventScript_NeedBerryForBerryCrush
 	setvar VAR_0x8004, LINK_GROUP_BERRY_CRUSH
@@ -1188,10 +1188,6 @@ CableClub_EventScript_OpenGameCornerBarrier:: @ 81BC048
 CableClub_EventScript_CloseGameCornerBarrier:: @ 81BC052
 	setmetatile 5, 3, METATILE_GameCorner_CounterBarrier, 1
 	return
-
-CableClub_OnResume:: @ 81BC05C
-	special InitUnionRoom
-	end
 
 JoyfulGameCorner_EventScript_InfoMan2:: @ 81BC060
 	goto_if_questlog EventScript_ReleaseEnd

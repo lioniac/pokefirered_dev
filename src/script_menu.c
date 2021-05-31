@@ -311,19 +311,12 @@ static const struct MenuAction sScriptMultiChoiceMenu_BikeShop[] = {
 };
 
 static const struct MenuAction sScriptMultiChoiceMenu_GameCornerPokemonPrizes[] = {
-#if defined(FIRERED)
     { gText_Abra_180Coins },
     { gText_Clefairy_500Coins },
     { gText_Dratini_2800Coins },
+    { gText_Pinsir_5500Coins },
     { gText_Scyther_5500Coins },
     { gText_Porygon_9999Coins },
-#elif defined(LEAFGREEN)
-    { gText_Abra_120Coins },
-    { gText_Clefairy_750Coins },
-    { gText_Pinsir_2500Coins },
-    { gText_Dratini_4600Coins },
-    { gText_Porygon_6500Coins },
-#endif
     { gText_NoThanks_2 }
 };
 
@@ -590,7 +583,14 @@ const u8 *const gStdStringPtrs[] = {
     [STDSTRING_KEY_ITEMS_POCKET] = gText_KeyItemsPocket,
     [STDSTRING_POKEBALLS_POCKET] = gText_PokeBallsPocket,
     [STDSTRING_TM_CASE]          = gText_TmCase,
-    [STDSTRING_BERRY_POUCH]      = gText_BerryPouch_2
+    [STDSTRING_BERRY_POUCH]      = gText_BerryPouch_2,
+    [STDSTRING_SUNDAY]           = gText_Sunday,
+    [STDSTRING_MONDAY]           = gText_Monday,
+    [STDSTRING_TUESDAY]          = gText_Tuesday,
+    [STDSTRING_WEDNESDAY]        = gText_Wednesday,
+    [STDSTRING_THURSDAY]         = gText_Thursday,
+    [STDSTRING_FRIDAY]           = gText_Friday,
+    [STDSTRING_SATURDAY]         = gText_Saturday
 };
 
 static const u8 *const sDescriptionPtrs_CableClub_TradeBattleCancel[] = {

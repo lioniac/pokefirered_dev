@@ -5,6 +5,7 @@
 #include "credits.h"
 #include "event_data.h"
 #include "event_object_movement.h"
+#include "event_object_lock.h"
 #include "event_scripts.h"
 #include "field_camera.h"
 #include "field_control_avatar.h"
@@ -47,6 +48,8 @@
 #include "trainer_pokemon_sprites.h"
 #include "vs_seeker.h"
 #include "wild_encounter.h"
+#include "follow_me.h"
+#include "clock.h"
 #include "constants/maps.h"
 #include "constants/region_map_sections.h"
 #include "constants/songs.h"
@@ -136,7 +139,6 @@ static void CB2_LoadMap2(void);
 static void c2_80567AC(void);
 static void CB2_ReturnToFieldLocal(void);
 static void CB2_ReturnToFieldLink(void);
-static void FieldClearVBlankHBlankCallbacks(void);
 static void SetFieldVBlankCallback(void);
 static void VBlankCB_Field(void);
 
@@ -335,6 +337,7 @@ static void Overworld_ResetStateAfterWhitingOut(void)
     FlagClear(FLAG_SYS_USE_STRENGTH);
     FlagClear(FLAG_SYS_FLASH_ACTIVE);
     FlagClear(FLAG_SYS_QL_DEPARTED);
+    FlagClear(FLAG_DISABLE_BAG);
     VarSet(VAR_QL_ENTRANCE, 0);
 }
 
@@ -370,6 +373,27 @@ void IncrementGameStat(u8 statId)
     else
         statVal = 0xFFFFFF;
     SetGameStat(statId, statVal);
+}
+
+void IncrementSeasonPedometer()
+{
+    u8 currMapType = GetCurrentMapType();
+
+    if (currMapType >= 1 && currMapType <= 3)
+    {
+        u16 stepsRemaining;
+
+        if (gSaveBlock1Ptr->seasonPedometer < 0xFFFFFF)
+            gSaveBlock1Ptr->seasonPedometer++;
+        else
+            gSaveBlock1Ptr->seasonPedometer = 1;
+
+        stepsRemaining = STEPS_FOR_SEASON_CHANGE - (gSaveBlock1Ptr->seasonPedometer % STEPS_FOR_SEASON_CHANGE);
+        VarSet(VAR_STEPS_FOR_NEXT_SEASON, stepsRemaining);
+
+        if (stepsRemaining == 0)
+            FlagSet(FLAG_SEASON_CHANGE);
+    }
 }
 
 u32 GetGameStat(u8 statId)
@@ -759,6 +783,7 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
     ResetCyclingRoadChallengeData();
     RestartWildEncounterImmunitySteps();
     MapResetTrainerRematches(mapGroup, mapNum);
+    DoTimeBasedEvents();
     SetSav1WeatherFromCurrMapHeader();
     ChooseAmbientCrySpecies();
     SetDefaultFlashLevel();
@@ -794,6 +819,8 @@ static void mli0_load_map(bool32 a1)
     ResetCyclingRoadChallengeData();
     RestartWildEncounterImmunitySteps();
     MapResetTrainerRematches(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum);
+    if (a1 != 1)
+        DoTimeBasedEvents();
     SetSav1WeatherFromCurrMapHeader();
     ChooseAmbientCrySpecies();
     if (isOutdoors)
@@ -877,7 +904,7 @@ static u8 GetAdjustedInitialTransitionFlags(struct InitialPlayerAvatarState *pla
         return PLAYER_AVATAR_FLAG_ON_FOOT;
     else if (mapType == MAP_TYPE_UNDERWATER)
         return PLAYER_AVATAR_FLAG_UNDERWATER;
-    else if (sub_8055B38(metatileBehavior) == TRUE)
+    else if (MetatileBehavior_IsSurfableWaterOrUnderwater(metatileBehavior) == TRUE)
         return PLAYER_AVATAR_FLAG_ON_FOOT;
     else if (MetatileBehavior_IsSurfable(metatileBehavior) == TRUE)
         return PLAYER_AVATAR_FLAG_SURFING;
@@ -891,7 +918,7 @@ static u8 GetAdjustedInitialTransitionFlags(struct InitialPlayerAvatarState *pla
         return PLAYER_AVATAR_FLAG_ACRO_BIKE;
 }
 
-bool8 sub_8055B38(u16 metatileBehavior)
+bool8 MetatileBehavior_IsSurfableWaterOrUnderwater(u16 metatileBehavior)
 {
     if (MetatileBehavior_IsSurfable(metatileBehavior) != TRUE)
         return FALSE;
@@ -1412,6 +1439,10 @@ static void DoCB1_Overworld(u16 newKeys, u16 heldKeys)
         }
     }
     RunQuestLogCB();
+
+    // if stop running but keep holding B -> fix follower frame
+    if (PlayerHasFollower() && IsPlayerOnFoot() && IsPlayerStandingStill())
+        ObjectEventSetHeldMovement(&gObjectEvents[GetFollowerObjectId()], GetFaceDirectionAnimNum(gObjectEvents[GetFollowerObjectId()].facingDirection));
 }
 
 static void DoCB1_Overworld_QuestLogPlayback(void)
@@ -1688,6 +1719,7 @@ void CB2_ContinueSavedGame(void)
     LoadSaveblockMapHeader();
     LoadSaveblockObjEventScripts();
     UnfreezeObjectEvents();
+    DoTimeBasedEvents();
     Overworld_ResetStateOnContinue();
     InitMapFromSavedGame();
     PlayTimeCounter_Start();
@@ -1710,7 +1742,7 @@ void CB2_ContinueSavedGame(void)
     }
 }
 
-static void FieldClearVBlankHBlankCallbacks(void)
+void FieldClearVBlankHBlankCallbacks(void)
 {
     if (UsedPokemonCenterWarp() == TRUE)
         CloseLink();
@@ -1935,6 +1967,7 @@ static bool32 sub_8056CD8(u8 *state)
         sub_8057024(FALSE);
         ReloadObjectsAndRunReturnToFieldMapScript();
         sub_8057114();
+        FollowMe_BindToSurbBlobOnReloadScreen();
         (*state)++;
         break;
     case 1:
@@ -2139,6 +2172,7 @@ static void mli4_mapscripts_and_other(void)
     ResetInitialPlayerAvatarState();
     TrySpawnObjectEvents(0, 0);
     TryRunOnWarpIntoMapScript();
+    FollowMe_HandleSprite();
 }
 
 static void ReloadObjectsAndRunReturnToFieldMapScript(void)

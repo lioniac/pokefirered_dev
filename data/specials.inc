@@ -419,7 +419,7 @@ gSpecials:: @ 815FD60
 	def_special HelpSystem_Disable
 	def_special HelpSystem_Enable
 	def_special SetPostgameFlags
-	def_special HasAtLeastOneBerry
+	def_special CheckHasAtLeastOneBerry
 	def_special DisplayBerryPowderVendorMenu
 	def_special RemoveBerryPowderVendorMenu
 	def_special Script_HasEnoughBerryPowder
@@ -452,4 +452,18 @@ gSpecials:: @ 815FD60
 	def_special UpdateLoreleiDollCollection
 	def_special LoopWingFlapSound
 	def_special CreateEventLegalEnemyMon
+	def_special RyuIvCheckerDef
+	def_special RyuIvCheckerOff
+	def_special RyuEvCheckerDef
+	def_special RyuEvCheckerOff
+	def_special RyuResetEvs
+	def_special SetHpEvs
+	def_special SetAtkEvs
+	def_special SetDefEvs
+	def_special SetSpdEvs
+	def_special SetSpAtkEvs
+	def_special SetSpDefEvs
+	def_special SetMonMoves
+	def_special RestoreMovesPP
+	def_special GetCurrentDayString
 gSpecialsEnd::

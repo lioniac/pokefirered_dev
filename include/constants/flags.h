@@ -203,150 +203,155 @@
 #define FLAG_0x0C1               0x0C1
 #define FLAG_0x0C2               0x0C2
 #define FLAG_0x0C3               0x0C3
-#define FLAG_0x0C4               0x0C4
-#define FLAG_0x0C5               0x0C5
-#define FLAG_0x0C6               0x0C6
-#define FLAG_0x0C7               0x0C7
-#define FLAG_0x0C8               0x0C8
-#define FLAG_0x0C9               0x0C9
-#define FLAG_0x0CA               0x0CA
-#define FLAG_0x0CB               0x0CB
-#define FLAG_0x0CC               0x0CC
-#define FLAG_0x0CD               0x0CD
-#define FLAG_0x0CE               0x0CE
-#define FLAG_0x0CF               0x0CF
-#define FLAG_0x0D0               0x0D0
-#define FLAG_0x0D1               0x0D1
-#define FLAG_0x0D2               0x0D2
-#define FLAG_0x0D3               0x0D3
-#define FLAG_0x0D4               0x0D4
-#define FLAG_0x0D5               0x0D5
-#define FLAG_0x0D6               0x0D6
-#define FLAG_0x0D7               0x0D7
-#define FLAG_0x0D8               0x0D8
-#define FLAG_0x0D9               0x0D9
-#define FLAG_0x0DA               0x0DA
-#define FLAG_0x0DB               0x0DB
-#define FLAG_0x0DC               0x0DC
-#define FLAG_0x0DD               0x0DD
-#define FLAG_0x0DE               0x0DE
-#define FLAG_0x0DF               0x0DF
-#define FLAG_0x0E0               0x0E0
-#define FLAG_0x0E1               0x0E1
-#define FLAG_0x0E2               0x0E2
-#define FLAG_0x0E3               0x0E3
-#define FLAG_0x0E4               0x0E4
-#define FLAG_0x0E5               0x0E5
-#define FLAG_0x0E6               0x0E6
-#define FLAG_0x0E7               0x0E7
-#define FLAG_0x0E8               0x0E8
-#define FLAG_0x0E9               0x0E9
-#define FLAG_0x0EA               0x0EA
-#define FLAG_0x0EB               0x0EB
-#define FLAG_0x0EC               0x0EC
-#define FLAG_0x0ED               0x0ED
-#define FLAG_0x0EE               0x0EE
-#define FLAG_0x0EF               0x0EF
-#define FLAG_0x0F0               0x0F0
-#define FLAG_0x0F1               0x0F1
-#define FLAG_0x0F2               0x0F2
-#define FLAG_0x0F3               0x0F3
-#define FLAG_0x0F4               0x0F4
-#define FLAG_0x0F5               0x0F5
-#define FLAG_0x0F6               0x0F6
-#define FLAG_0x0F7               0x0F7
-#define FLAG_0x0F8               0x0F8
-#define FLAG_0x0F9               0x0F9
-#define FLAG_0x0FA               0x0FA
-#define FLAG_0x0FB               0x0FB
-#define FLAG_0x0FC               0x0FC
-#define FLAG_0x0FD               0x0FD
-#define FLAG_0x0FE               0x0FE
-#define FLAG_0x0FF               0x0FF
-#define FLAG_0x100               0x100
-#define FLAG_0x101               0x101
-#define FLAG_0x102               0x102
-#define FLAG_0x103               0x103
-#define FLAG_0x104               0x104
-#define FLAG_0x105               0x105
-#define FLAG_0x106               0x106
-#define FLAG_0x107               0x107
-#define FLAG_0x108               0x108
-#define FLAG_0x109               0x109
-#define FLAG_0x10A               0x10A
-#define FLAG_0x10B               0x10B
-#define FLAG_0x10C               0x10C
-#define FLAG_0x10D               0x10D
-#define FLAG_0x10E               0x10E
-#define FLAG_0x10F               0x10F
-#define FLAG_0x110               0x110
-#define FLAG_0x111               0x111
-#define FLAG_0x112               0x112
-#define FLAG_0x113               0x113
-#define FLAG_0x114               0x114
-#define FLAG_0x115               0x115
-#define FLAG_0x116               0x116
-#define FLAG_0x117               0x117
-#define FLAG_0x118               0x118
-#define FLAG_0x119               0x119
-#define FLAG_0x11A               0x11A
-#define FLAG_0x11B               0x11B
-#define FLAG_0x11C               0x11C
-#define FLAG_0x11D               0x11D
-#define FLAG_0x11E               0x11E
-#define FLAG_0x11F               0x11F
-#define FLAG_0x120               0x120
-#define FLAG_0x121               0x121
-#define FLAG_0x122               0x122
-#define FLAG_0x123               0x123
-#define FLAG_0x124               0x124
-#define FLAG_0x125               0x125
-#define FLAG_0x126               0x126
-#define FLAG_0x127               0x127
-#define FLAG_0x128               0x128
-#define FLAG_0x129               0x129
-#define FLAG_0x12A               0x12A
-#define FLAG_0x12B               0x12B
-#define FLAG_0x12C               0x12C
-#define FLAG_0x12D               0x12D
-#define FLAG_0x12E               0x12E
-#define FLAG_0x12F               0x12F
-#define FLAG_0x130               0x130
-#define FLAG_0x131               0x131
-#define FLAG_0x132               0x132
-#define FLAG_0x133               0x133
-#define FLAG_0x134               0x134
-#define FLAG_0x135               0x135
-#define FLAG_0x136               0x136
-#define FLAG_0x137               0x137
-#define FLAG_0x138               0x138
-#define FLAG_0x139               0x139
-#define FLAG_0x13A               0x13A
-#define FLAG_0x13B               0x13B
-#define FLAG_0x13C               0x13C
-#define FLAG_0x13D               0x13D
-#define FLAG_0x13E               0x13E
-#define FLAG_0x13F               0x13F
-#define FLAG_0x140               0x140
-#define FLAG_0x141               0x141
-#define FLAG_0x142               0x142
-#define FLAG_0x143               0x143
-#define FLAG_0x144               0x144
-#define FLAG_0x145               0x145
-#define FLAG_0x146               0x146
-#define FLAG_0x147               0x147
-#define FLAG_0x148               0x148
-#define FLAG_0x149               0x149
-#define FLAG_0x14A               0x14A
-#define FLAG_0x14B               0x14B
-#define FLAG_0x14C               0x14C
-#define FLAG_0x14D               0x14D
-#define FLAG_0x14E               0x14E
-#define FLAG_0x14F               0x14F
-#define FLAG_0x150               0x150
-#define FLAG_0x151               0x151
-#define FLAG_0x152               0x152
-#define FLAG_0x153               0x153
+
+// Hidden Items per Season (Seasons Random Weather)
+// Summer
+#define HIDDEN_ITEM_0x0C4        0x0C4
+#define HIDDEN_ITEM_0x0C5        0x0C5
+#define HIDDEN_ITEM_0x0C6        0x0C6
+#define HIDDEN_ITEM_0x0C7        0x0C7
+#define HIDDEN_ITEM_0x0C8        0x0C8
+#define HIDDEN_ITEM_0x0C9        0x0C9
+#define HIDDEN_ITEM_0x0CA        0x0CA
+#define HIDDEN_ITEM_0x0CB        0x0CB
+#define HIDDEN_ITEM_0x0CC        0x0CC
+#define HIDDEN_ITEM_0x0CD        0x0CD
+#define HIDDEN_ITEM_0x0CE        0x0CE
+#define HIDDEN_ITEM_0x0CF        0x0CF
+#define HIDDEN_ITEM_0x0D0        0x0D0
+#define HIDDEN_ITEM_0x0D1        0x0D1
+#define HIDDEN_ITEM_0x0D2        0x0D2
+#define HIDDEN_ITEM_0x0D3        0x0D3
+#define HIDDEN_ITEM_0x0D4        0x0D4
+#define HIDDEN_ITEM_0x0D5        0x0D5
+#define HIDDEN_ITEM_0x0D6        0x0D6
+#define HIDDEN_ITEM_0x0D7        0x0D7
+#define HIDDEN_ITEM_0x0D8        0x0D8
+#define HIDDEN_ITEM_0x0D9        0x0D9
+#define HIDDEN_ITEM_0x0DA        0x0DA
+#define HIDDEN_ITEM_0x0DB        0x0DB
+#define HIDDEN_ITEM_0x0DC        0x0DC
+#define HIDDEN_ITEM_0x0DD        0x0DD
+#define HIDDEN_ITEM_0x0DE        0x0DE
+#define HIDDEN_ITEM_0x0DF        0x0DF
+#define HIDDEN_ITEM_0x0E0        0x0E0
+#define HIDDEN_ITEM_0x0E1        0x0E1
+#define HIDDEN_ITEM_0x0E2        0x0E2
+#define HIDDEN_ITEM_0x0E3        0x0E3
+#define HIDDEN_ITEM_0x0E4        0x0E4
+#define HIDDEN_ITEM_0x0E5        0x0E5
+#define HIDDEN_ITEM_0x0E6        0x0E6
+#define HIDDEN_ITEM_0x0E7        0x0E7
+#define HIDDEN_ITEM_0x0E8        0x0E8
+#define HIDDEN_ITEM_0x0E9        0x0E9
+#define HIDDEN_ITEM_0x0EA        0x0EA
+#define HIDDEN_ITEM_0x0EB        0x0EB
+#define HIDDEN_ITEM_0x0EC        0x0EC
+#define HIDDEN_ITEM_0x0ED        0x0ED
+#define HIDDEN_ITEM_0x0EE        0x0EE
+#define HIDDEN_ITEM_0x0EF        0x0EF
+#define HIDDEN_ITEM_0x0F0        0x0F0
+#define HIDDEN_ITEM_0x0F1        0x0F1
+#define HIDDEN_ITEM_0x0F2        0x0F2
+#define HIDDEN_ITEM_0x0F3        0x0F3
+// Autumn
+#define HIDDEN_ITEM_0x0F4        0x0F4
+#define HIDDEN_ITEM_0x0F5        0x0F5
+#define HIDDEN_ITEM_0x0F6        0x0F6
+#define HIDDEN_ITEM_0x0F7        0x0F7
+#define HIDDEN_ITEM_0x0F8        0x0F8
+#define HIDDEN_ITEM_0x0F9        0x0F9
+#define HIDDEN_ITEM_0x0FA        0x0FA
+#define HIDDEN_ITEM_0x0FB        0x0FB
+#define HIDDEN_ITEM_0x0FC        0x0FC
+#define HIDDEN_ITEM_0x0FD        0x0FD
+#define HIDDEN_ITEM_0x0FE        0x0FE
+#define HIDDEN_ITEM_0x0FF        0x0FF
+#define HIDDEN_ITEM_0x100        0x100
+#define HIDDEN_ITEM_0x101        0x101
+#define HIDDEN_ITEM_0x102        0x102
+#define HIDDEN_ITEM_0x103        0x103
+#define HIDDEN_ITEM_0x104        0x104
+#define HIDDEN_ITEM_0x105        0x105
+#define HIDDEN_ITEM_0x106        0x106
+#define HIDDEN_ITEM_0x107        0x107
+#define HIDDEN_ITEM_0x108        0x108
+#define HIDDEN_ITEM_0x109        0x109
+#define HIDDEN_ITEM_0x10A        0x10A
+#define HIDDEN_ITEM_0x10B        0x10B
+#define HIDDEN_ITEM_0x10C        0x10C
+#define HIDDEN_ITEM_0x10D        0x10D
+#define HIDDEN_ITEM_0x10E        0x10E
+#define HIDDEN_ITEM_0x10F        0x10F
+#define HIDDEN_ITEM_0x110        0x110
+#define HIDDEN_ITEM_0x111        0x111
+#define HIDDEN_ITEM_0x112        0x112
+#define HIDDEN_ITEM_0x113        0x113
+#define HIDDEN_ITEM_0x114        0x114
+#define HIDDEN_ITEM_0x115        0x115
+#define HIDDEN_ITEM_0x116        0x116
+#define HIDDEN_ITEM_0x117        0x117
+#define HIDDEN_ITEM_0x118        0x118
+#define HIDDEN_ITEM_0x119        0x119
+#define HIDDEN_ITEM_0x11A        0x11A
+#define HIDDEN_ITEM_0x11B        0x11B
+#define HIDDEN_ITEM_0x11C        0x11C
+#define HIDDEN_ITEM_0x11D        0x11D
+#define HIDDEN_ITEM_0x11E        0x11E
+#define HIDDEN_ITEM_0x11F        0x11F
+#define HIDDEN_ITEM_0x120        0x120
+#define HIDDEN_ITEM_0x121        0x121
+#define HIDDEN_ITEM_0x122        0x122
+#define HIDDEN_ITEM_0x123        0x123
+// Winter
+#define HIDDEN_ITEM_0x124        0x124
+#define HIDDEN_ITEM_0x125        0x125
+#define HIDDEN_ITEM_0x126        0x126
+#define HIDDEN_ITEM_0x127        0x127
+#define HIDDEN_ITEM_0x128        0x128
+#define HIDDEN_ITEM_0x129        0x129
+#define HIDDEN_ITEM_0x12A        0x12A
+#define HIDDEN_ITEM_0x12B        0x12B
+#define HIDDEN_ITEM_0x12C        0x12C
+#define HIDDEN_ITEM_0x12D        0x12D
+#define HIDDEN_ITEM_0x12E        0x12E
+#define HIDDEN_ITEM_0x12F        0x12F
+#define HIDDEN_ITEM_0x130        0x130
+#define HIDDEN_ITEM_0x131        0x131
+#define HIDDEN_ITEM_0x132        0x132
+#define HIDDEN_ITEM_0x133        0x133
+#define HIDDEN_ITEM_0x134        0x134
+#define HIDDEN_ITEM_0x135        0x135
+#define HIDDEN_ITEM_0x136        0x136
+#define HIDDEN_ITEM_0x137        0x137
+#define HIDDEN_ITEM_0x138        0x138
+#define HIDDEN_ITEM_0x139        0x139
+#define HIDDEN_ITEM_0x13A        0x13A
+#define HIDDEN_ITEM_0x13B        0x13B
+#define HIDDEN_ITEM_0x13C        0x13C
+#define HIDDEN_ITEM_0x13D        0x13D
+#define HIDDEN_ITEM_0x13E        0x13E
+#define HIDDEN_ITEM_0x13F        0x13F
+#define HIDDEN_ITEM_0x140        0x140
+#define HIDDEN_ITEM_0x141        0x141
+#define HIDDEN_ITEM_0x142        0x142
+#define HIDDEN_ITEM_0x143        0x143
+#define HIDDEN_ITEM_0x144        0x144
+#define HIDDEN_ITEM_0x145        0x145
+#define HIDDEN_ITEM_0x146        0x146
+#define HIDDEN_ITEM_0x147        0x147
+#define HIDDEN_ITEM_0x148        0x148
+#define HIDDEN_ITEM_0x149        0x149
+#define HIDDEN_ITEM_0x14A        0x14A
+#define HIDDEN_ITEM_0x14B        0x14B
+#define HIDDEN_ITEM_0x14C        0x14C
+#define HIDDEN_ITEM_0x14D        0x14D
+#define HIDDEN_ITEM_0x14E        0x14E
+#define HIDDEN_ITEM_0x14F        0x14F
+#define HIDDEN_ITEM_0x150        0x150
+#define HIDDEN_ITEM_0x151        0x151
+#define HIDDEN_ITEM_0x152        0x152
+#define HIDDEN_ITEM_0x153        0x153
 
 // Item ball hide/show
 #define FLAG_HIDE_ROUTE2_ETHER                                  0x154
@@ -523,8 +528,8 @@
 
 // Unused?
 #define FLAG_0x1FF               0x1FF
-#define FLAG_0x200               0x200
-#define FLAG_0x201               0x201
+#define FLAG_QUEST_MENU_ACTIVE   0x200
+#define FLAG_SEASON_CHANGE       0x201
 #define FLAG_0x202               0x202
 #define FLAG_0x203               0x203
 #define FLAG_0x204               0x204
@@ -1239,7 +1244,7 @@
 #define FLAG_DEFEATED_CHAMP           0x4BC
 
 // Unused?
-#define FLAG_0x4BD               0x4BD
+#define FLAG_DISABLE_BAG         0x4BD
 #define FLAG_0x4BE               0x4BE
 #define FLAG_0x4BF               0x4BF
 #define FLAG_0x4C0               0x4C0
@@ -1257,55 +1262,58 @@
 #define FLAG_0x4CC               0x4CC
 #define FLAG_0x4CD               0x4CD
 #define FLAG_0x4CE               0x4CE
-#define FLAG_0x4CF               0x4CF
-#define FLAG_0x4D0               0x4D0
-#define FLAG_0x4D1               0x4D1
-#define FLAG_0x4D2               0x4D2
-#define FLAG_0x4D3               0x4D3
-#define FLAG_0x4D4               0x4D4
-#define FLAG_0x4D5               0x4D5
-#define FLAG_0x4D6               0x4D6
-#define FLAG_0x4D7               0x4D7
-#define FLAG_0x4D8               0x4D8
-#define FLAG_0x4D9               0x4D9
-#define FLAG_0x4DA               0x4DA
-#define FLAG_0x4DB               0x4DB
-#define FLAG_0x4DC               0x4DC
-#define FLAG_0x4DD               0x4DD
-#define FLAG_0x4DE               0x4DE
-#define FLAG_0x4DF               0x4DF
-#define FLAG_0x4E0               0x4E0
-#define FLAG_0x4E1               0x4E1
-#define FLAG_0x4E2               0x4E2
-#define FLAG_0x4E3               0x4E3
-#define FLAG_0x4E4               0x4E4
-#define FLAG_0x4E5               0x4E5
-#define FLAG_0x4E6               0x4E6
-#define FLAG_0x4E7               0x4E7
-#define FLAG_0x4E8               0x4E8
-#define FLAG_0x4E9               0x4E9
-#define FLAG_0x4EA               0x4EA
-#define FLAG_0x4EB               0x4EB
-#define FLAG_0x4EC               0x4EC
-#define FLAG_0x4ED               0x4ED
-#define FLAG_0x4EE               0x4EE
-#define FLAG_0x4EF               0x4EF
-#define FLAG_0x4F0               0x4F0
-#define FLAG_0x4F1               0x4F1
-#define FLAG_0x4F2               0x4F2
-#define FLAG_0x4F3               0x4F3
-#define FLAG_0x4F4               0x4F4
-#define FLAG_0x4F5               0x4F5
-#define FLAG_0x4F6               0x4F6
-#define FLAG_0x4F7               0x4F7
-#define FLAG_0x4F8               0x4F8
-#define FLAG_0x4F9               0x4F9
-#define FLAG_0x4FA               0x4FA
-#define FLAG_0x4FB               0x4FB
-#define FLAG_0x4FC               0x4FC
-#define FLAG_0x4FD               0x4FD
-#define FLAG_0x4FE               0x4FE
-#define FLAG_0x4FF               0x4FF
+
+// Cut Trees One Time
+#define FLAG_TREE_VIRIDIAN_01       1231 //0x4CF
+#define FLAG_TREE_VIRIDIAN_02       (FLAG_TREE_VIRIDIAN_01 + 1)
+#define FLAG_TREE_ROUTE2_01         (FLAG_TREE_VIRIDIAN_01 + 2)
+#define FLAG_TREE_ROUTE2_02         (FLAG_TREE_VIRIDIAN_01 + 3)
+#define FLAG_TREE_ROUTE2_03         (FLAG_TREE_VIRIDIAN_01 + 4)
+#define FLAG_TREE_ROUTE2_04         (FLAG_TREE_VIRIDIAN_01 + 5)
+#define FLAG_TREE_PEWTER_01         (FLAG_TREE_VIRIDIAN_01 + 6)
+#define FLAG_TREE_CERULEAN_01       (FLAG_TREE_VIRIDIAN_01 + 7)
+#define FLAG_TREE_ROUTE25_01        (FLAG_TREE_VIRIDIAN_01 + 8)
+#define FLAG_TREE_VERMILION_01      (FLAG_TREE_VIRIDIAN_01 + 9)
+#define FLAG_TREE_ROUTE9_01         (FLAG_TREE_VIRIDIAN_01 + 10)
+#define FLAG_TREE_ROUTE10_01        (FLAG_TREE_VIRIDIAN_01 + 11)
+#define FLAG_TREE_ROUTE10_02        (FLAG_TREE_VIRIDIAN_01 + 12)
+#define FLAG_TREE_ROUTE10_03        (FLAG_TREE_VIRIDIAN_01 + 13)
+#define FLAG_TREE_ROUTE10_04        (FLAG_TREE_VIRIDIAN_01 + 14)
+#define FLAG_TREE_ROUTE8_01         (FLAG_TREE_VIRIDIAN_01 + 15)
+#define FLAG_TREE_ROUTE8_02         (FLAG_TREE_VIRIDIAN_01 + 16)
+#define FLAG_TREE_CELADON_01        (FLAG_TREE_VIRIDIAN_01 + 17)
+#define FLAG_TREE_CELADON_02        (FLAG_TREE_VIRIDIAN_01 + 18)
+#define FLAG_TREE_CELADON_GYM_01    (FLAG_TREE_VIRIDIAN_01 + 19)
+#define FLAG_TREE_CELADON_GYM_02    (FLAG_TREE_VIRIDIAN_01 + 20)
+#define FLAG_TREE_CELADON_GYM_03    (FLAG_TREE_VIRIDIAN_01 + 21)
+#define FLAG_TREE_ROUTE16_01        (FLAG_TREE_VIRIDIAN_01 + 22)
+#define FLAG_TREE_FUCHSIA_01        (FLAG_TREE_VIRIDIAN_01 + 23)
+#define FLAG_TREE_FUCHSIA_02        (FLAG_TREE_VIRIDIAN_01 + 24)
+#define FLAG_TREE_FUCHSIA_03        (FLAG_TREE_VIRIDIAN_01 + 25)
+#define FLAG_TREE_FUCHSIA_04        (FLAG_TREE_VIRIDIAN_01 + 26)
+#define FLAG_TREE_ROUTE14_01        (FLAG_TREE_VIRIDIAN_01 + 27)
+#define FLAG_TREE_ROUTE14_02        (FLAG_TREE_VIRIDIAN_01 + 28)
+#define FLAG_TREE_ROUTE14_03        (FLAG_TREE_VIRIDIAN_01 + 29)
+#define FLAG_TREE_ROUTE13_01        (FLAG_TREE_VIRIDIAN_01 + 30)
+#define FLAG_TREE_ROUTE12_01        (FLAG_TREE_VIRIDIAN_01 + 31)
+#define FLAG_TREE_ROUTE12_02        (FLAG_TREE_VIRIDIAN_01 + 32)
+#define FLAG_TREE_TWOISLAND_01      (FLAG_TREE_VIRIDIAN_01 + 33)
+#define FLAG_TREE_THREEISLAND_01    (FLAG_TREE_VIRIDIAN_01 + 34)
+#define FLAG_TREE_BONDBRIDGE_01     (FLAG_TREE_VIRIDIAN_01 + 35)
+#define FLAG_TREE_BONDBRIDGE_02     (FLAG_TREE_VIRIDIAN_01 + 36)
+#define FLAG_TREE_BERRYFOREST_01    (FLAG_TREE_VIRIDIAN_01 + 37)
+#define FLAG_TREE_BERRYFOREST_02    (FLAG_TREE_VIRIDIAN_01 + 38)
+#define FLAG_TREE_BERRYFOREST_03    (FLAG_TREE_VIRIDIAN_01 + 49)
+#define FLAG_TREE_BERRYFOREST_04    (FLAG_TREE_VIRIDIAN_01 + 40)
+#define FLAG_TREE_BERRYFOREST_05    (FLAG_TREE_VIRIDIAN_01 + 41)
+#define FLAG_TREE_BERRYFOREST_06    (FLAG_TREE_VIRIDIAN_01 + 42)
+#define FLAG_TREE_BERRYFOREST_07    (FLAG_TREE_VIRIDIAN_01 + 43)
+#define FLAG_TREE_BERRYFOREST_08    (FLAG_TREE_VIRIDIAN_01 + 44)
+#define FLAG_TREE_BERRYFOREST_09    (FLAG_TREE_VIRIDIAN_01 + 45)
+#define FLAG_TREE_BERRYFOREST_10    (FLAG_TREE_VIRIDIAN_01 + 46)
+#define FLAG_TREE_MEADOW_01         (FLAG_TREE_VIRIDIAN_01 + 47)
+#define FLAG_TREE_MEADOW_02         (FLAG_TREE_VIRIDIAN_01 + 48) //0x4FF
+#define FLAG_0x4FF                  0x4FF // Used in code as reference
 
 #define TRAINER_FLAGS_START      (FLAG_0x4FF + 1)
 #define TRAINER_FLAGS_END        (TRAINER_FLAGS_START + MAX_TRAINERS_COUNT - 1) // 0x7FF
@@ -1364,12 +1372,12 @@
 
 #define FLAG_SYS_POKEMON_GET                                        (SYS_FLAGS + 0x28)
 #define FLAG_SYS_POKEDEX_GET                                        (SYS_FLAGS + 0x29)
-#define FLAG_0x82A                                                  (SYS_FLAGS + 0x2A)
+#define FLAG_SYS_QUEST_MENU_GET                                     (SYS_FLAGS + 0x2A)
 #define FLAG_0x82B                                                  (SYS_FLAGS + 0x2B)
 #define FLAG_SYS_GAME_CLEAR                                         (SYS_FLAGS + 0x2C)
 #define FLAG_SYS_SET_TRAINER_CARD_PROFILE                           (SYS_FLAGS + 0x2D)
 #define FLAG_0x82E                                                  (SYS_FLAGS + 0x2E)
-#define FLAG_SYS_B_DASH                                             (SYS_FLAGS + 0x2F)
+#define FLAG_0x82F                                                  (SYS_FLAGS + 0x2F) //AutoRun: (unused: FLAG_SYS_B_DASH)
 #define FLAG_SYS_ON_CYCLING_ROAD                                    (SYS_FLAGS + 0x30)
 #define FLAG_0x831                                                  (SYS_FLAGS + 0x31)
 #define FLAG_0x832                                                  (SYS_FLAGS + 0x32)
@@ -1385,7 +1393,7 @@
 #define FLAG_SYS_SAW_HELP_SYSTEM_INTRO                              (SYS_FLAGS + 0x3C)
 #define FLAG_0x83D                                                  (SYS_FLAGS + 0x3D)
 #define FLAG_OPENED_START_MENU                                      (SYS_FLAGS + 0x3E)
-#define FLAG_0x83F                                                  (SYS_FLAGS + 0x3F)
+#define FLAG_SYS_CLOCK_SET                                          (SYS_FLAGS + 0x3F)
 #define FLAG_SYS_NATIONAL_DEX                                       (SYS_FLAGS + 0x40)
 #define FLAG_SYS_PC_STORAGE_DISABLED                                (SYS_FLAGS + 0x41)
 #define FLAG_SYS_INFORMED_OF_LOCAL_WIRELESS_PLAYER                  (SYS_FLAGS + 0x42)

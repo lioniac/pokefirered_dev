@@ -15,6 +15,10 @@
 #include "scanline_effect.h"
 #include "save_failed_screen.h"
 #include "quest_log.h"
+#include "rtc.h"
+#include "siirtc.h"
+#include "main.h"
+#include "mgba.h"
 
 extern u32 intr_main[];
 
@@ -25,7 +29,6 @@ static void SerialIntr(void);
 static void IntrDummy(void);
 
 const u8 gGameVersion = GAME_VERSION;
-
 const u8 gGameLanguage = GAME_LANGUAGE;
 
 #if MODERN
@@ -85,6 +88,7 @@ EWRAM_DATA u16 gTrainerId = 0;
 static void UpdateLinkAndCallCallbacks(void);
 static void InitMainCallbacks(void);
 static void CallCallbacks(void);
+static void SeedRngWithRtc(void);
 static void ReadKeys(void);
 void InitIntrHandlers(void);
 static void WaitForVBlank(void);
@@ -131,15 +135,19 @@ void AgbMain()
     InitKeys();
     InitIntrHandlers();
     m4aSoundInit();
+    RtcInit();
     EnableVCountIntrAtLine150();
     InitRFU();
     CheckForFlashMemory();
     InitMainCallbacks();
     InitMapMusic();
+    SeedRngAndSetTrainerId();
+    SeedRngWithRtc();
     ClearDma3Requests();
     ResetBgs();
     InitHeap(gHeap, HEAP_SIZE);
     SetDefaultFontsPointer();
+    mgba_open();
 
     gSoftResetDisabled = FALSE;
     gHelpSystemEnabled = FALSE;
@@ -254,6 +262,13 @@ void EnableVCountIntrAtLine150(void)
     u16 gpuReg = (GetGpuReg(REG_OFFSET_DISPSTAT) & 0xFF) | (150 << 8);
     SetGpuReg(REG_OFFSET_DISPSTAT, gpuReg | DISPSTAT_VCOUNT_INTR);
     EnableInterrupts(INTR_FLAG_VCOUNT);
+}
+
+static void SeedRngWithRtc(void)
+{
+    u32 seed = RtcGetMinuteCount();
+    seed = (seed >> 16) ^ (seed & 0xFFFF);
+    SeedRng(seed);
 }
 
 void InitKeys(void)
@@ -437,9 +452,7 @@ static void IntrDummy(void)
 static void WaitForVBlank(void)
 {
     gMain.intrCheck &= ~INTR_FLAG_VBLANK;
-
-    while (!(gMain.intrCheck & INTR_FLAG_VBLANK))
-        ;
+    asm("swi 0x5"); // VBlankIntrWait();
 }
 
 void SetVBlankCounter1Ptr(u32 *ptr)
@@ -460,6 +473,7 @@ void DoSoftReset(void)
     DmaStop(1);
     DmaStop(2);
     DmaStop(3);
+    SiiRtcProtect();
     SoftReset(RESET_ALL & ~RESET_SIO_REGS);
 }
 

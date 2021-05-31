@@ -300,7 +300,7 @@
 	.byte 0x2d
 	.endm
 
-	@ Resets the values of variables VAR_0x8000, VAR_0x8001, and VAR_0x8002.
+	@ Sets the values of variables 0x8000, 0x8001, 0x8002 and 0x8003 to the current hour, minute, second and day of the week.
 	.macro gettime
 	.byte 0x2e
 	.endm
@@ -877,9 +877,19 @@
 	.2byte \species
 	.byte \level
 	.2byte \item
-	.4byte 0x0
+	.4byte 0xFF
 	.4byte 0x0
 	.byte 0
+	.endm
+
+    .macro givecustommon species:req, level:req, item:req, nature:req, ball:req, fixedIv:req
+	.byte 0x79
+	.2byte \species
+	.byte \level
+	.2byte \item
+	.4byte \nature
+	.4byte \ball
+	.byte \fixedIv
 	.endm
 
 	.macro giveegg species:req
@@ -974,10 +984,10 @@
 	.4byte \products
 	.endm
 
-	@ Apparent clone of pokemart.
-	.macro pokemartbp products:req
+	@ Opens the Pokemart system, offering the specified products for sale,
+	@ based on number of badges.
+	.macro badgemart
 	.byte 0x88
-	.4byte \products
 	.endm
 
 	@ Starts up the slot machine minigame.
@@ -1445,7 +1455,43 @@
 	.2byte \item
 	.2byte \quantity
 	.endm
+	
+	.macro handlefollower caseId:req, localId:req, flags:req
+	.byte 0xd5
+	.byte \caseId
+	.byte \localId
+	.2byte \flags
+	.endm
 
+    .macro questmenu case:req, questId:req
+    .byte 0xd6
+    .byte \case
+    .byte \questId
+    .endm
+    
+    .macro openquestmenu
+    questmenu 0 0
+    .endm
+
+	@ sets an NPC up to follow the player
+	.macro setfollower localId:req, flags:req
+	handlefollower FLAG_SET_FOLLOWER, \localId, \flags
+	.endm
+	
+	@ remove the following NPC (assumes there will only ever be one)
+	.macro destroyfollower
+	handlefollower FLAG_REMOVE_FOLLOWER, 0, 0
+	.endm
+	
+	@ makes the player and follower face one another
+	.macro facefollower
+	handlefollower FLAG_FACE_FOLLOWER, 0, 0
+	.endm
+	
+	@ checks if you have a follower. returns the result to VAR_RESULT
+	.macro checkfollower
+	handlefollower FLAG_CHECK_FOLLOWER, 0, 0
+	.endm
 
 @ Supplementary
 

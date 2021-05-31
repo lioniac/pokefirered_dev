@@ -31,6 +31,7 @@
 #include "teachy_tv.h"
 #include "tm_case.h"
 #include "vs_seeker.h"
+#include "follow_me.h"
 #include "constants/fanfares.h"
 #include "constants/items.h"
 #include "constants/maps.h"
@@ -280,6 +281,7 @@ static void ItemUseOnFieldCB_Bicycle(u8 taskId)
     ClearPlayerHeldMovementAndUnfreezeObjectEvents();
     ScriptContext2_Disable();
     DestroyTask(taskId);
+    FollowMe_HandleBike();
 }
 
 void FieldUseFunc_OldRod(u8 taskId)
@@ -408,7 +410,7 @@ static void sub_80A16D0(u8 taskId)
 
 void FieldUseFunc_Medicine(u8 taskId)
 {
-    gItemUseCB = ItemUseCB_Medicine;
+    gItemUseCB = ItemUseCB_MedicineStep;
     sub_80A16D0(taskId);
 }
 
@@ -426,7 +428,7 @@ void FieldUseFunc_PpUp(u8 taskId)
 
 void FieldUseFunc_RareCandy(u8 taskId)
 {
-    gItemUseCB = ItemUseCB_RareCandy;
+    gItemUseCB = ItemUseCB_RareCandyStep;
     sub_80A16D0(taskId);
 }
 
@@ -565,6 +567,7 @@ static void sub_80A19E8(u8 taskId)
     {
         ItemUse_SetQuestLogEvent(QL_EVENT_USED_ITEM, NULL, gSpecialVar_ItemId, 0xFFFF);
         VarSet(VAR_REPEL_STEP_COUNT, ItemId_GetHoldEffectParam(gSpecialVar_ItemId));
+        VarSet(VAR_REPEL_LAST_USED, gSpecialVar_ItemId);
         sub_80A1A44();
         DisplayItemMessageInBag(taskId, 2, gStringVar4, Task_ReturnToBagFromContextMenu);
     }
@@ -576,7 +579,7 @@ static void sub_80A1A44(void)
     Pocket_CalculateNItemsAndMaxShowed(ItemId_GetPocket(gSpecialVar_ItemId));
     PocketCalculateInitialCursorPosAndItemsAbove(ItemId_GetPocket(gSpecialVar_ItemId));
     CopyItemName(gSpecialVar_ItemId, gStringVar2);
-    StringExpandPlaceholders(gStringVar4, gUnknown_841658C);
+    StringExpandPlaceholders(gStringVar4, gText_PlayerUsedVar2);
 }
 
 void FieldUseFunc_BlackFlute(u8 taskId)
@@ -613,6 +616,9 @@ static void sub_80A1B48(u8 taskId)
 
 bool8 CanUseEscapeRopeOnCurrMap(void)
 {
+    if (!CheckFollowerFlag(FOLLOWER_FLAG_CAN_LEAVE_ROUTE))
+        return FALSE;
+
     if (gMapHeader.flags & MAP_ALLOW_ESCAPE_ROPE)
         return TRUE;
     else
@@ -727,6 +733,27 @@ void FieldUseFunc_VsSeeker(u8 taskId)
         sItemUseOnFieldCB = Task_VsSeeker_0;
         sub_80A103C(taskId);
     }
+}
+
+void FieldUseFunc_ExpShare(u8 taskId)
+{
+	if (!gSaveBlock2Ptr->expShare)
+	{
+		PlaySE(SE_EXP_MAX);
+		if (!gTasks[taskId].data[2]) // to account for pressing select in the overworld
+			DisplayItemMessageOnField(taskId, 2, gText_ExpShareOn, Task_ItemUse_CloseMessageBoxAndReturnToField);
+		else
+			DisplayItemMessageInBag(taskId, 2, gText_ExpShareOn, Task_ReturnToBagFromContextMenu);
+	}
+	else
+	{
+		PlaySE(SE_PC_OFF);
+		if (!gTasks[taskId].data[2]) // to account for pressing select in the overworld
+			DisplayItemMessageOnField(taskId, 2, gText_ExpShareOff, Task_ItemUse_CloseMessageBoxAndReturnToField);
+		else
+			DisplayItemMessageInBag(taskId, 2, gText_ExpShareOff, Task_ReturnToBagFromContextMenu);
+	}
+	gSaveBlock2Ptr->expShare = !gSaveBlock2Ptr->expShare;
 }
 
 void Task_ItemUse_CloseMessageBoxAndReturnToField_VsSeeker(u8 taskId)

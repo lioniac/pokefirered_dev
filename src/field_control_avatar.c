@@ -3,6 +3,7 @@
 #include "bike.h"
 #include "coord_event_weather.h"
 #include "daycare.h"
+#include "debug.h"
 #include "event_data.h"
 #include "event_object_movement.h"
 #include "event_scripts.h"
@@ -25,6 +26,7 @@
 #include "trainer_see.h"
 #include "vs_seeker.h"
 #include "wild_encounter.h"
+#include "follow_me.h"
 #include "constants/songs.h"
 #include "constants/event_bg.h"
 #include "constants/event_objects.h"
@@ -71,6 +73,9 @@ static bool8 TryDoorWarp(struct MapPosition * position, u16 metatileBehavior, u8
 static s8 GetWarpEventAtPosition(struct MapHeader * mapHeader, u16 x, u16 y, u8 z);
 static const u8 *GetCoordEventScriptAtPosition(struct MapHeader * mapHeader, u16 x, u16 y, u8 z);
 
+static bool32 TrySetupDiveEmergeScript(void);
+static bool32 TrySetupDiveDownScript(void);
+
 struct FieldInput gInputToStoreInQuestLogMaybe;
 
 void FieldClearPlayerInput(struct FieldInput *input)
@@ -84,7 +89,7 @@ void FieldClearPlayerInput(struct FieldInput *input)
     input->tookStep = FALSE;
     input->pressedBButton = FALSE;
     input->pressedRButton = FALSE;
-    input->input_field_1_0 = FALSE;
+    input->pressedLButton = FALSE;
     input->input_field_1_1 = FALSE;
     input->input_field_1_2 = FALSE;
     input->input_field_1_3 = FALSE;
@@ -117,6 +122,8 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
                         input->pressedAButton = TRUE;
                     if (newKeys & B_BUTTON)
                         input->pressedBButton = TRUE;
+                    if (newKeys & L_BUTTON)
+                        input->pressedLButton = TRUE;
                     if (newKeys & R_BUTTON)
                         input->pressedRButton = TRUE;
                 }
@@ -153,6 +160,20 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
         else if (heldKeys & DPAD_RIGHT)
             input->dpadDirection = DIR_EAST;
     }
+
+    if (input->pressedSelectButton)
+    {
+        input->pressedSelectButton = TRUE;
+    }
+
+#if DEBUG
+    if ((heldKeys & B_BUTTON) && input->pressedStartButton)
+    {
+        mgba_printf(MGBA_LOG_INFO, "Opening debug menu.");
+        input->input_field_1_2 = TRUE;
+        input->pressedStartButton = FALSE;
+    }
+#endif
 }
 
 static void QuestLogOverrideJoyVars(struct FieldInput *input, u16 *newKeys, u16 *heldKeys)
@@ -212,9 +233,13 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     if (TryRunOnFrameMapScript() == TRUE)
         return TRUE;
 
+    if (input->pressedBButton && TrySetupDiveEmergeScript() == TRUE)
+        return TRUE;
+
     if (input->tookStep)
     {
         IncrementGameStat(GAME_STAT_STEPS);
+        IncrementSeasonPedometer();
         MENewsJisanStepCounter();
         IncrementRenewableHiddenItemStepCounter();
         RunMassageCooldownStepCounter();
@@ -281,6 +306,9 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
         }
     }
 
+    if (input->pressedAButton && TrySetupDiveDownScript() == TRUE)
+        return TRUE;
+
     if (input->pressedStartButton)
     {
         gInputToStoreInQuestLogMaybe.pressedStartButton = TRUE;
@@ -289,11 +317,33 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
         ShowStartMenu();
         return TRUE;
     }
-    if (input->pressedSelectButton && UseRegisteredKeyItemOnField() == TRUE)
+
+    if (input->pressedSelectButton && UseRegisteredKeyItemOnField(0) == TRUE)
     {
         gInputToStoreInQuestLogMaybe.pressedSelectButton = TRUE;
         return TRUE;
     }
+
+    if (input->pressedLButton && UseRegisteredKeyItemOnField(1) == TRUE)
+    {
+        gInputToStoreInQuestLogMaybe.pressedLButton = TRUE;
+        return TRUE;
+    }
+
+    if (input->pressedRButton && UseRegisteredKeyItemOnField(2) == TRUE)
+    {
+        gInputToStoreInQuestLogMaybe.pressedRButton = TRUE;
+        return TRUE;
+    }
+
+#if DEBUG
+    if (input->input_field_1_2)
+    {
+        PlaySE(SE_WIN_OPEN);
+        Debug_ShowMainMenu();
+        return TRUE;
+    }
+#endif
 
     return FALSE;
 }
@@ -502,8 +552,29 @@ static const u8 *GetInteractedBackgroundEventScript(struct MapPosition *position
         gSpecialVar_0x8006 = GetHiddenItemAttr((u32)bgEvent->bgUnion.script, HIDDEN_ITEM_QUANTITY);
         if (FlagGet(gSpecialVar_0x8004) == TRUE)
             return NULL;
-        gSpecialVar_Facing = direction;
-        return EventScript_HiddenItemScript;
+
+        if (gSpecialVar_0x8004 >= 1000 && gSpecialVar_0x8004 <= 1190)
+        {
+            gSpecialVar_Facing = direction;
+            return EventScript_HiddenItemScript;
+        }
+        else if (gSaveBlock1Ptr->season == 1 && gSpecialVar_0x8004 >= 0x0C4 && gSpecialVar_0x8004 <= 0x0F3)
+        {
+            gSpecialVar_Facing = direction;
+            return EventScript_HiddenItemScript;
+        }
+        else if (gSaveBlock1Ptr->season == 2 && gSpecialVar_0x8004 >= 0x0F4 && gSpecialVar_0x8004 <= 0x123)
+        {
+            gSpecialVar_Facing = direction;
+            return EventScript_HiddenItemScript;
+        }
+        else if (gSaveBlock1Ptr->season == 3 && gSpecialVar_0x8004 >= 0x124 && gSpecialVar_0x8004 <= 0x153)
+        {
+            gSpecialVar_Facing = direction;
+            return EventScript_HiddenItemScript;
+        } 
+        else
+            return NULL;
     }
 
     if (signpostType != SIGNPOST_NA)
@@ -600,12 +671,13 @@ static const u8 *GetInteractedMetatileScript(struct MapPosition *position, u8 me
 
 static const u8 *GetInteractedWaterScript(struct MapPosition *unused1, u8 metatileBehavior, u8 direction)
 {
-    if (MetatileBehavior_IsSemiDeepWater(metatileBehavior) == TRUE &&PartyHasMonWithSurf() == TRUE)
+    if (MetatileBehavior_IsSemiDeepWater(metatileBehavior) == TRUE && PartyHasMonWithSurf() == TRUE)
         return EventScript_CurrentTooFast;
-    if (FlagGet(FLAG_BADGE05_GET) == TRUE && PartyHasMonWithSurf() == TRUE && IsPlayerFacingSurfableFishableWater() == TRUE)
+
+    if (FlagGet(FLAG_BADGE05_GET) == TRUE && PartyHasMonWithSurf() == TRUE && IsPlayerFacingSurfableFishableWater() == TRUE && CheckFollowerFlag(FOLLOWER_FLAG_CAN_SURF))
         return EventScript_UseSurf;
 
-    if (MetatileBehavior_IsWaterfall(metatileBehavior) == TRUE)
+    if (MetatileBehavior_IsWaterfall(metatileBehavior) == TRUE && CheckFollowerFlag(FOLLOWER_FLAG_CAN_WATERFALL))
     {
         if (FlagGet(FLAG_BADGE07_GET) == TRUE && IsPlayerSurfingNorth() == TRUE)
             return EventScript_Waterfall;
@@ -614,6 +686,34 @@ static const u8 *GetInteractedWaterScript(struct MapPosition *unused1, u8 metati
     }
     return NULL;
 }
+
+#ifdef DIVE_ENABLED //prevent trying to compile until dive is implemented fully
+static bool32 TrySetupDiveDownScript(void)
+{
+    if (!CheckFollowerFlag(FOLLOWER_FLAG_CAN_DIVE))
+        return FALSE;
+
+    if (FlagGet(FLAG_BADGE07_GET) && TrySetDiveWarp() == 2)
+    {
+        ScriptContext1_SetupScript(EventScript_UseDive);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static bool32 TrySetupDiveEmergeScript(void)
+{
+    if (!CheckFollowerFlag(FOLLOWER_FLAG_CAN_DIVE))
+        return FALSE;
+
+    if (FlagGet(FLAG_BADGE07_GET) && gMapHeader.mapType == MAP_TYPE_UNDERWATER && TrySetDiveWarp() == 1)
+    {
+        ScriptContext1_SetupScript(EventScript_UseDiveUnderwater);
+        return TRUE;
+    }
+    return FALSE;
+}
+#endif
 
 static bool8 TryStartStepBasedScript(struct MapPosition *position, u16 metatileBehavior, u16 direction)
 {
@@ -1140,7 +1240,7 @@ bool8 dive_warp(struct MapPosition *position, u16 metatileBehavior)
     return FALSE;
 }
 
-static u8 TrySetDiveWarp(void)
+u8 TrySetDiveWarp(void)
 {
     s16 x, y;
     u8 metatileBehavior;
@@ -1179,4 +1279,25 @@ int SetCableClubWarp(void)
     MapGridGetMetatileBehaviorAt(position.x, position.y);  // unnecessary
     SetupWarp(&gMapHeader, GetWarpEventAtMapPosition(&gMapHeader, &position), &position);
     return 0;
+}
+
+//dive
+static bool32 TrySetupDiveDownScript(void)
+{
+    if (FlagGet(FLAG_BADGE07_GET) && TrySetDiveWarp() == 2)
+    {
+        ScriptContext1_SetupScript(EventScript_UseDive);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static bool32 TrySetupDiveEmergeScript(void)
+{
+    if (FlagGet(FLAG_BADGE07_GET) && gMapHeader.mapType == MAP_TYPE_UNDERWATER && TrySetDiveWarp() == 1)
+    {
+        ScriptContext1_SetupScript(EventScript_UseDiveUnderwater);
+        return TRUE;
+    }
+    return FALSE;
 }
