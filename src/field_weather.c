@@ -28,12 +28,12 @@ const u16 sDroughtWeatherColors[][0x1000] = {
     INCBIN_U16("graphics/weather/drought/colors_5.bin"),
 };
 
-enum
-{
-    GAMMA_NONE,
-    GAMMA_NORMAL,
-    GAMMA_ALT,
-};
+// enum
+// {
+//     GAMMA_NONE,
+//     GAMMA_NORMAL,
+//     GAMMA_ALT,
+// };
 
 struct RGBColor
 {
